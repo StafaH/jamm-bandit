@@ -1,0 +1,74 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<script type="text/javascript">
+
+// user_choice is an arbitrary string label or int. 
+function result(user_choice) {
+  console.log(user_choice);
+  image = document.getElementById("candidate");
+if!image) { 
+    console.log("No image element in page."); 
+    return; 
+  }
+  // Load a new image but report result.
+  document.location = "/?log="+image.src+":"+user_choice;
+}
+
+// Simple click
+// document.addEventListener('click', function(){result(0);}, false);        
+
+// Click and drag (non-touch-screen)
+document.addEventListener('dragstart', handleDragStart, false);
+document.addEventListener('dragend', handleDragEnd, false);
+
+// On mobile swipe action
+document.addEventListener('touchstart', handleTouchStart, false);        
+document.addEventListener('touchmove', handleTouchEnd, false);
+
+var xDown = null;                                                        
+function handleDragStart(evt) {                                         
+  xDown = evt.clientX;                                      
+};                                                
+function handleTouchStart(evt) {                                         
+  xDown = evt.touches[0].clientX;                                      
+};                                                
+function handleTouchEnd(evt) {
+  handleEnd(evt.touches[0].clientX);
+}
+function handleDragEnd(evt) {
+  handleEnd(evt.clientX);
+}
+function handleEnd(xUp) {
+  if ( !xDown ) { return; }
+  var xDiff = xDown - xUp;
+  if ( xDiff > 2 ) result(1);   
+  if ( xDiff < -2 ) result(-1);   
+  xDown = null;
+};
+
+</script>
+<style>
+body {
+  background: rgba(120, 99, 71, 0.2);
+  color: black;
+}
+
+#candidate {
+  display: block;
+  width: 50%;
+  padding: 10px;
+  border: 2px solid white;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+</style>
+</head>
+<body dragable="true"> 
+    <center>Is this face <b><i>warm</i></b>  </center> 
+	<center>Swipe left for no, right for yes </center> 
+  <img id="candidate" src="{{image}}"> 
+</body>
+</html>
+

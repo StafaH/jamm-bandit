@@ -65,14 +65,24 @@ body {
   margin-right: auto;
 }
 
+.buttons {
+  margin: 0;
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
 </style>
 </head>
 <body dragable="true"> 
-    <center>Is this face <b><i>warm</i></b>  </center> 
-	<center>Swipe left for no, right for yes </center> 
-	<button onclick="document.getElementById('candidate').src='../images/1.png'">Left</button>
-    <img src="../images/1.png" id="candidate"> 
-    <button onclick="document.getElementById('candidate').src='../images/2.png'">Right</button>
+    <center>Is this face <b><i>warm</i></b>?  </center> 
+    <img src="../images/1.png" id="candidate" style="width:500px", height="500px"> 
+    <div class="buttons">
+       	<button onclick="document.getElementById('candidate').src='../images/1.png'", style="width:100px">No</button>
+        <button onclick="document.getElementById('candidate').src='../images/2.png'" style="width:100px">Yes</button>
+    </div>
 </body>
 </html>
 

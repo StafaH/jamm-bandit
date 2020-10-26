@@ -20,6 +20,15 @@ next_image = 0
 # Current logfile, but should be changed to TS
 logfile = open(LOGFILE, "a", 0)
 
+## read logfile, filter out already-processed images
+if os.path.isfile(LOGFILE):
+  with open(LOGFILE, "r") as logfile:
+    logs = logfile.read()
+    for raw in raw_images:
+      if raw in logs: proc_images.append(PATH + raw)
+      else: images.append(PATH + raw)
+      
+      
 # Custom static data
 @app.route('/images/<path:filename>')
 def custom_static(filename):

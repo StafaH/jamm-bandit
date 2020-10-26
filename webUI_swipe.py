@@ -46,7 +46,7 @@ def get_image():
 		current_image = images[next_image]
 		
 	# Render a new image:
-	return render_template('index.html', image = current_image, image_index = image_index)
+	return render_template('webUI.html', image = current_image, image_index = image_index)
 	
 if __name__ == "__main__":
 	app.run(debug = True, host = "0.0.0.0")

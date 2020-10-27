@@ -6,17 +6,21 @@ from PIL import Image
 import numpy as np
 import torch
 
-import stylegan2
-from stylegan2 import utils
+#import stylegan2
+#from stylegan2 import utils
 
 from flask import Flask, request, make_response, render_template, send_from_directory
+IMAGES_FOLDER = os.path.join('static', 'images')
+
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = IMAGES_FOLDER
 
 # Load the StyleGAN2 Model
 #G = stylegan2.models.load('Gs.pth')
 #G.eval()
 # generate_images(G, args)
 
+'''
 def generate_image(G, output = '/images', truncation_psi = 1, gpu = [], seeds = [6600], batch_size = 1, pixel_min = 1, pixel_max = 1):
     latent_size, label_size = G.latent_size, G.label_size
     #device = torch.device(args.gpu[0] if args.gpu else 'cpu')
@@ -98,9 +102,11 @@ def generate_image(G, output = '/images', truncation_psi = 1, gpu = [], seeds = 
 
     #progress.write('Done!', step=False)
     #progress.close()
-
+'''
 
 @app.route("/")
+@app.route('/index')
 def gen_image():
     #image = generate_image(G)
-    return render_template('webUI.html')#, image = 'images/1.png', image_index = 0)
+    full_filename = os.path.join(app.config['UPLOAD_FOLDER'], '1.png')
+    return render_template('webUI.html', image = full_filename)

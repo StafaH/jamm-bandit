@@ -63,8 +63,6 @@ def generate_image(G):
         img.save('static/images/seed6600.png')
         #return img
     print("DONE!")
-           
-
 
 @app.route("/")
 @app.route('/index')

@@ -10,12 +10,14 @@ import stylegan2
 from stylegan2 import utils
 
 from flask import Flask, request, make_response, render_template, send_from_directory
+IMAGES_FOLDER = os.path.join('static', 'images')
+
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = IMAGES_FOLDER
 
 # Load the StyleGAN2 Model
 G = stylegan2.models.load('Gs.pth')
 G.eval()
-# generate_images(G, args)
 
 def generate_image(G):
     latent_size, label_size = G.latent_size, G.label_size
@@ -39,7 +41,7 @@ def generate_image(G):
         noise_tensors[i].append(torch.from_numpy(rnd.randn(*ref.size()[1:])))
 
     if label_size:
-                labels.append(torch.tensor([rnd.randint(0, label_size)]))
+        labels.append(torch.tensor([rnd.randint(0, label_size)]))
     
     latents = torch.stack(latents, dim=0).to(device=device, dtype=torch.float32)
     if labels:
@@ -58,13 +60,15 @@ def generate_image(G):
         generated, pixel_min=-1, pixel_max=1)
     
     for img in images:
-        #img.save('images/seed6600.png')
-        return img
+        img.save('static/images/seed6600.png')
+        #return img
     print("DONE!")
            
 
 
 @app.route("/")
+@app.route('/index')
 def gen_image():
-    image = generate_image(G)
-    return render_template('webUI.html')#, image = 'images/1.png', image_index = 0)
+    generate_image(G)
+    full_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'seed6600.png')
+    return render_template('webUI.html', image = full_filename)

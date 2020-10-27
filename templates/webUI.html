@@ -2,6 +2,8 @@
 <head>
     <title>JAMM Bandit</title>
 <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
 </head>
 
 <script>
@@ -68,6 +70,7 @@ function handleEnd(xUp) {
 */
 
 </script>
+
 <style>
 body {
   background: rgba(120, 99, 71, 0.2);
@@ -104,14 +107,29 @@ body {
 </style>
 
 <body dragable="true"> 
-    <center>Is this face <b><i>warm</i></b>?  </center> 
-    <img src="{{  image  }}" id="candidate" style="width:500px", height="500px"> 
-    <div class="yesno">
-		<button onclick="noChange();", style="width:100px","height:80px">No</button>
-		<button onclick="yesChange();", style="width:100px","height:80px">Yes</button>
-    </div>
-	<div class="skip">
-		<button onclick="skip();", style="width:200px">Skip</button>
+	<center>Is this face <b><i>warm</i></b>?  </center> 
+	<img src="{{  image  }}" id="candidate" style="width:500px", height="500px"> 
+	<div class="container">
+		<div class="row">
+			<div class="col-sm">
+				<div class="yesno">
+					<button type="button" class="btn btn-danger" onclick="noChange();", style="width:100px","height:80px">No</button>
+				</div>
+			</div>
+		<div class="col-sm">
+		</div>
+		<div class="col-sm">
+			<div class="yesno">
+				<button type="button" class="btn btn-success" onclick="yesChange();", style="width:100px","height:80px">Yes</button>
+			</div>
+		</div>
+	  </div>
 	</div>
+	
+	<div class="skip">
+		<button type="button" class="btn btn-dark" onclick="skip();", style="width:400px">There's something wrong with this image (skip)</button>
+	</div>
+
+		
 </body>
 </html>

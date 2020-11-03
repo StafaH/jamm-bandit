@@ -85,7 +85,7 @@ def get_unique_user_id():
     now = datetime.now()
     return now.strftime("%m/%d/%Y, %H:%M:%S")
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():
     return MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")
 

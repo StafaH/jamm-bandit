@@ -1,92 +1,152 @@
 import numpy as np
 import os
-import pickle
-import streamlit as st
-import sys
-import tensorflow as tf
 import urllib
+from datetime import datetime
 
-sys.path.append('tl_gan')
-sys.path.append('pg_gan')
-import feature_axis
-import tfutil
-import tfutil_cpu
+import torch
+import stylegan2
+from stylegan2 import utils
 
-# This should not be hashed by Streamlit when using st.cache.
-TL_GAN_HASH_FUNCS = {
-    tf.Session : id
-}
+import streamlit as st
+from streamlit.report_thread import get_report_ctx
+from streamlit.server.server import Server
+from streamlit.hashing import _CodeHasher
+
+from pymongo import MongoClient
+
+from logistic_regression import random_weights
 
 def main():
-    st.title("Streamlit Face-GAN Demo")
-    """This demo demonstrates  using [Nvidia's Progressive Growing of GANs](https://research.nvidia.com/publication/2017-10_Progressive-Growing-of) and 
-    Shaobo Guan's [Transparent Latent-space GAN method](https://blog.insightdatascience.com/generating-custom-photo-realistic-faces-using-ai-d170b1b59255) 
-    for tuning the output face's characteristics. For more information, check out the tutorial on [Towards Data Science](https://towardsdatascience.com/building-machine-learning-apps-with-streamlit-667cef3ff509)."""
 
-    # Download all data files if they aren't already in the working directory.
-    for filename in EXTERNAL_DEPENDENCIES.keys():
-        download_file(filename)
+    # session state for persistent values
+    state = _get_state()
 
-    # Read in models from the data files.
-    tl_gan_model, feature_names = load_tl_gan_model()
-    session, pg_gan_model = load_pg_gan_model()
-
-    st.sidebar.title('Features')
-    seed = 27834096
-    # If the user doesn't want to select which features to control, these will be used.
-    default_control_features = ['Young','Smiling','Male']
-
-    if st.sidebar.checkbox('Show advanced options'):
-        # Randomly initialize feature values. 
-        features = get_random_features(feature_names, seed)
-
-        # Some features are badly calibrated and biased. Removing them
-        block_list = ['Attractive', 'Big_Lips', 'Big_Nose', 'Pale_Skin']
-        sanitized_features = [feature for feature in features if feature not in block_list]
-        
-        # Let the user pick which features to control with sliders.
-        control_features = st.sidebar.multiselect( 'Control which features?',
-            sorted(sanitized_features), default_control_features)
-    else:
-        features = get_random_features(feature_names, seed)
-        # Don't let the user pick feature values to control.
-        control_features = default_control_features
-    
-    # Insert user-controlled values from sliders into the feature vector.
-    for feature in control_features:
-        features[feature] = st.sidebar.slider(feature, 0, 100, 50, 5)
+    # Set up database connection
+    client = get_database_connection()  
+    results = client.results
 
 
-    st.sidebar.title('Note')
-    st.sidebar.write(
-        """Playing with the sliders, you _will_ find **biases** that exist in this model.
-        """
-    )
-    st.sidebar.write(
-        """For example, moving the `Smiling` slider can turn a face from masculine to feminine or from lighter skin to darker. 
-        """
-    )
-    st.sidebar.write(
-        """Apps like these that allow you to visually inspect model inputs help you find these biases so you can address them in your model _before_ it's put into production.
-        """
-    )
+    now = datetime.now()
+    user = results[get_unique_user_id()]
 
+    st.title('Is this face warm?')
 
-    # Generate a new image from this feature vector (or retrieve it from the cache).
-    with session.as_default():
-        image_out = generate_image(session, pg_gan_model, tl_gan_model,
-                features, feature_names)
+    # Download the model file
+    download_file('Gs.pth')
 
+    # Load the StyleGAN2 Model
+    G = load_model()
+    G.eval()
+
+    # Feature Sliders 
+    st.sidebar.title('Please fill this out before starting!')
+    st.sidebar.number_input('Age', min_value=12, max_value=100)
+    st.sidebar.selectbox('Gender', ('Male', 'Female', 'Other'))
+    st.sidebar.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    st.sidebar.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    st.sidebar.button('Submit')
+    #default_control_features = ['Male']
+
+    # Update the weights
+    #rnd = np.random.RandomState(6600)
+    #latents = rnd.randn(512)
+    weights = random_weights()
+    weights_str = np.array_str(weights, precision = 6, suppress_small = True)
+
+    # Generate the image
+    image_out = generate_image(G, weights)
+
+    # Output the image
     st.image(image_out, use_column_width=True)
+    
 
+    if st.button('Yes'):
+        new_result = {
+            'reward': "yes",
+            'latents': weights_str
+        }
+        user.insert_one(new_result)
 
+    if st.button('No'):
+        new_result = {
+            'reward': "no",
+            'latents': weights_str
+        }
+        user.insert_one(new_result)
+
+    if st.button('There is something wrong with this picture!'):
+        pass
+
+    # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
+    state.sync()
+
+@st.cache
+def get_unique_user_id():
+    now = datetime.now()
+    return now.strftime("%m/%d/%Y, %H:%M:%S")
+
+@st.cache(allow_output_mutation=True)
+def get_database_connection():
+    return MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")
+
+# @st.cache(hash_funcs={DBConnection: id})
+# def get_users(connection):
+#     # Note: We assume that connection is of type DBConnection.
+#     return connection.execute_sql('SELECT * from Users')
+
+@st.cache(show_spinner=False)
+def generate_image(G, weights):
+    latent_size, label_size = G.latent_size, G.label_size
+
+    device = torch.device('cpu')
+    if device.index is not None:
+        torch.cuda.set_device(device.index)
+    G.to(device)
+
+    G.set_truncation(0.5)
+    noise_reference = G.static_noise()
+    noise_tensors = [[] for _ in noise_reference]
+
+    latents = []
+    labels = []
+    rnd = np.random.RandomState(6600)
+    latents.append(torch.from_numpy(weights))
+            
+    for i, ref in enumerate(noise_reference):
+        noise_tensors[i].append(torch.from_numpy(rnd.randn(*ref.size()[1:])))
+
+    if label_size:
+        labels.append(torch.tensor([rnd.randint(0, label_size)]))
+    
+    latents = torch.stack(latents, dim=0).to(device=device, dtype=torch.float32)
+    if labels:
+        labels = torch.cat(labels, dim=0).to(device=device, dtype=torch.int64)
+    else:
+        labels = None
+    
+    noise_tensors = [torch.stack(noise, dim=0).to(device=device, dtype=torch.float32) for noise in noise_tensors]
+
+    if noise_tensors is not None:
+        G.static_noise(noise_tensors=noise_tensors)
+    with torch.no_grad():
+        generated = G(latents, labels=labels)
+    
+    images = utils.tensor_to_PIL(
+        generated, pixel_min=-1, pixel_max=1)
+    
+    for img in images:
+        #img.save('static/images/seed6600.png')
+        return img
+
+@st.cache(allow_output_mutation=True)
+def load_model():
+    return stylegan2.models.load('Gs.pth')
+    
+@st.cache
 def download_file(file_path):
     # Don't download the file twice. (If possible, verify the download using the file length.)
     if os.path.exists(file_path):
-        if "size" not in EXTERNAL_DEPENDENCIES[file_path]:
-            return
-        elif os.path.getsize(file_path) == EXTERNAL_DEPENDENCIES[file_path]["size"]:
-            return
+        return
 
     # These are handles to two visual elements to animate.
     weights_warning, progress_bar = None, None
@@ -94,7 +154,7 @@ def download_file(file_path):
         weights_warning = st.warning("Downloading %s..." % file_path)
         progress_bar = st.progress(0)
         with open(file_path, "wb") as output_file:
-            with urllib.request.urlopen(EXTERNAL_DEPENDENCIES[file_path]["url"]) as response:
+            with urllib.request.urlopen("https://d1p4vo8bv9dco3.cloudfront.net/Gs.pth") as response:
                 length = int(response.info()["Content-Length"])
                 counter = 0.0
                 MEGABYTES = 2.0 ** 20.0
@@ -117,97 +177,81 @@ def download_file(file_path):
         if progress_bar is not None:
             progress_bar.empty()
 
-# Ensure that load_pg_gan_model is called only once, when the app first loads.
-@st.cache(allow_output_mutation=True, hash_funcs=TL_GAN_HASH_FUNCS)
-def load_pg_gan_model():
-    """
-    Create the tensorflow session.
-    """
-    # Open a new TensorFlow session.
-    config = tf.ConfigProto(allow_soft_placement=True)
-    session = tf.Session(config=config)
 
-    # Must have a default TensorFlow session established in order to initialize the GAN.
-    with session.as_default():
-        # Read in either the GPU or the CPU version of the GAN
-        with open(MODEL_FILE_GPU if USE_GPU else MODEL_FILE_CPU, 'rb') as f:
-            G = pickle.load(f)
-    return session, G
+class _SessionState:
 
-# Ensure that load_tl_gan_model is called only once, when the app first loads.
-@st.cache(hash_funcs=TL_GAN_HASH_FUNCS)
-def load_tl_gan_model():
-    """
-    Load the linear model (matrix) which maps the feature space
-    to the GAN's latent space.
-    """
-    with open(FEATURE_DIRECTION_FILE, 'rb') as f:
-        feature_direction_name = pickle.load(f)
+    def __init__(self, session, hash_funcs):
+        """Initialize SessionState instance."""
+        self.__dict__["_state"] = {
+            "data": {},
+            "hash": None,
+            "hasher": _CodeHasher(hash_funcs),
+            "is_rerun": False,
+            "session": session,
+        }
 
-    # Pick apart the feature_direction_name data structure.
-    feature_direction = feature_direction_name['direction']
-    feature_names = feature_direction_name['name']
-    num_feature = feature_direction.shape[1]
-    feature_lock_status = np.zeros(num_feature).astype('bool')
+    def __call__(self, **kwargs):
+        """Initialize state data once."""
+        for item, value in kwargs.items():
+            if item not in self._state["data"]:
+                self._state["data"][item] = value
 
-    # Rearrange feature directions using Shaobo's library function.
-    feature_direction_disentangled = \
-        feature_axis.disentangle_feature_axis_by_idx(
-            feature_direction,
-            idx_base=np.flatnonzero(feature_lock_status))
-    return feature_direction_disentangled, feature_names
+    def __getitem__(self, item):
+        """Return a saved state value, None if item is undefined."""
+        return self._state["data"].get(item, None)
+        
+    def __getattr__(self, item):
+        """Return a saved state value, None if item is undefined."""
+        return self._state["data"].get(item, None)
 
-def get_random_features(feature_names, seed):
-    """
-    Return a random dictionary from feature names to feature
-    values within the range [40,60] (out of [0,100]).
-    """
-    np.random.seed(seed)
-    features = dict((name, 40+np.random.randint(0,21)) for name in feature_names)
-    return features
+    def __setitem__(self, item, value):
+        """Set state value."""
+        self._state["data"][item] = value
 
-# Hash the TensorFlow session, the pg-GAN model, and the TL-GAN model by id
-# to avoid expensive or illegal computations.
-@st.cache(show_spinner=False, hash_funcs=TL_GAN_HASH_FUNCS)
-def generate_image(session, pg_gan_model, tl_gan_model, features, feature_names):
-    """
-    Converts a feature vector into an image.
-    """
-    # Create rescaled feature vector.
-    feature_values = np.array([features[name] for name in feature_names])
-    feature_values = (feature_values - 50) / 250
-    # Multiply by Shaobo's matrix to get the latent variables.
-    latents = np.dot(tl_gan_model, feature_values)
-    latents = latents.reshape(1, -1)
-    dummies = np.zeros([1] + pg_gan_model.input_shapes[1][1:])
-    # Feed the latent vector to the GAN in TensorFlow.
-    with session.as_default():
-        images = pg_gan_model.run(latents, dummies)
-    # Rescale and reorient the GAN's output to make an image.
-    images = np.clip(np.rint((images + 1.0) / 2.0 * 255.0),
-                              0.0, 255.0).astype(np.uint8)  # [-1,1] => [0,255]
-    if USE_GPU:
-        images = images.transpose(0, 2, 3, 1)  # NCHW => NHWC
-    return images[0]
+    def __setattr__(self, item, value):
+        """Set state value."""
+        self._state["data"][item] = value
+    
+    def clear(self):
+        """Clear session state and request a rerun."""
+        self._state["data"].clear()
+        self._state["session"].request_rerun()
+    
+    def sync(self):
+        """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
 
-USE_GPU = False
-FEATURE_DIRECTION_FILE = "feature_direction_2018102_044444.pkl"
-MODEL_FILE_GPU = "karras2018iclr-celebahq-1024x1024-condensed.pkl"
-MODEL_FILE_CPU = "karras2018iclr-celebahq-1024x1024-condensed-cpu.pkl"
-EXTERNAL_DEPENDENCIES = {
-    "feature_direction_2018102_044444.pkl" : {
-        "url": "https://streamlit-demo-data.s3-us-west-2.amazonaws.com/facegan/feature_direction_20181002_044444.pkl",
-        "size": 164742
-    },
-    "karras2018iclr-celebahq-1024x1024-condensed.pkl": {
-        "url": "https://streamlit-demo-data.s3-us-west-2.amazonaws.com/facegan/karras2018iclr-celebahq-1024x1024-condensed.pkl",
-        "size": 92338293
-    },
-    "karras2018iclr-celebahq-1024x1024-condensed-cpu.pkl": {
-        "url": "https://streamlit-demo-data.s3-us-west-2.amazonaws.com/facegan/karras2018iclr-celebahq-1024x1024-condensed-cpu.pkl",
-        "size": 92340233
-    }
-}
+        # Ensure to rerun only once to avoid infinite loops
+        # caused by a constantly changing state value at each run.
+        #
+        # Example: state.value += 1
+        if self._state["is_rerun"]:
+            self._state["is_rerun"] = False
+        
+        elif self._state["hash"] is not None:
+            if self._state["hash"] != self._state["hasher"].to_bytes(self._state["data"], None):
+                self._state["is_rerun"] = True
+                self._state["session"].request_rerun()
+
+        self._state["hash"] = self._state["hasher"].to_bytes(self._state["data"], None)
+
+
+def _get_session():
+    session_id = get_report_ctx().session_id
+    session_info = Server.get_current()._get_session_info(session_id)
+
+    if session_info is None:
+        raise RuntimeError("Couldn't get your Streamlit Session object.")
+    
+    return session_info.session
+
+
+def _get_state(hash_funcs=None):
+    session = _get_session()
+
+    if not hasattr(session, "_custom_session_state"):
+        session._custom_session_state = _SessionState(session, hash_funcs)
+
+    return session._custom_session_state
 
 if __name__ == "__main__":
     main()

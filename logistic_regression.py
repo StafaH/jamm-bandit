@@ -1,9 +1,9 @@
 import numpy as np
 import statsmodels.api as sm
 
-features = 20 # would normally by 512
-trials = 1000 
-coef = np.zeros(features,) # this is the prior
+#features = 20 # would normally by 512
+#trials = 1000 
+#coef = np.zeros(features,) # this is the prior
 
 def logistic_reg(coef):
     
@@ -28,4 +28,7 @@ def logistic_reg(coef):
     
     return coef # updates coefficients
 
-coef = logistic_reg(coef)
+def random_weights():
+    weights = np.random.normal(loc=0, scale=1.0, size=(512,))
+    return weights
+

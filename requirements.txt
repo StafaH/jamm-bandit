@@ -12,7 +12,7 @@ scikit_learn>=0.20.0
 pyyaml
 requests
 tensorboard
-pytorch
+torch
 torchvision
 tqdm
 statsmodels

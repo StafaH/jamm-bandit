@@ -142,7 +142,7 @@ def generate_image(G, weights):
 def load_model():
     return stylegan2.models.load('Gs.pth')
     
-@st.cache
+@st.cache(suppress_st_warning=True)
 def download_file(file_path):
     # Don't download the file twice. (If possible, verify the download using the file length.)
     if os.path.exists(file_path):

@@ -20,19 +20,36 @@ def main():
     results = client.results
     now = datetime.now()
     user = results[get_unique_user_id()]
-    st.title('Which face is more aggressive?')
+
+    #Instructions
+    st.title("Thank you for your interest in our app! Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions. After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
+    
+    #Demographics
+    st.header('Please fill this out before starting!')
+    st.number_input('Age', min_value=12, max_value=100)
+    st.selectbox('Gender', ('Male', 'Female', 'Other'))
+    st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    st.button('Submit')    
+    
+
+    st.header('Which face is more aggressive?')
+
+
+
+
     # Download the model file
     download_file('Gs.pth')
     # Load the StyleGAN2 Model
     G = load_model()
     G.eval()
     # Feature Sliders 
-    st.sidebar.title('Please fill this out before starting!')
-    st.sidebar.number_input('Age', min_value=12, max_value=100)
-    st.sidebar.selectbox('Gender', ('Male', 'Female', 'Other'))
-    st.sidebar.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
-    st.sidebar.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
-    st.sidebar.button('Submit')
+    #st.sidebar.title('Please fill this out before starting!')
+    #st.sidebar.number_input('Age', min_value=12, max_value=100)
+    #st.sidebar.selectbox('Gender', ('Male', 'Female', 'Other'))
+    #st.sidebar.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    #st.sidebar.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    #st.sidebar.button('Submit')
     #default_control_features = ['Male']
     # Update the weights
     #rnd = np.random.RandomState(6600)

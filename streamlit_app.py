@@ -13,12 +13,8 @@ from pymongo import MongoClient
 from logistic_regression import random_weights
 
 def main():
-<<<<<<< Updated upstream
-    # session state for persistent values
-=======
 
     # Session state for persistent values
->>>>>>> Stashed changes
     state = _get_state()
     
     # Set up database connection
@@ -100,12 +96,6 @@ def main():
     
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
-<<<<<<< Updated upstream
-    
-@st.cache
-=======
-
->>>>>>> Stashed changes
 def get_unique_user_id():
     random_id = np.random.randint(0, 10000)
     

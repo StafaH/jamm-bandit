@@ -40,8 +40,7 @@ def main():
 
 	# Demographic page
 	st.write.title('Please fill this out before starting!')
-	age = st.slider('Age')
-	st.write('Age', x)
+	st.slider('Age')
 	st.write.number_input('Age', min_value=12, max_value=100)
 	st.selectbox('Gender',('Male', 'Female', 'Other'))
 	st.write.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))

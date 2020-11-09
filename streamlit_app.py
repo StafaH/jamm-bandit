@@ -24,23 +24,23 @@ def main():
 
     ask_dems = True
     
-    #Instructions
-    st.title("Thank you for your interest in our app!")
-    st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
-    st.title("After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
+    if ask_dems:
+        #Instructions
+        st.title("Thank you for your interest in our app!")
+        st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
+        st.title("After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
+        
+        #Demographics
+        st.header('Please fill this out before starting!')
+        st.text_input('Enter username')
+        st.number_input('Age', min_value=18, max_value=100)
+        st.selectbox('Gender', ('Male', 'Female', 'Other'))
+        st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+        st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+        if st.button('Submit'):
+            ask_dems = False
     
-    #Demographics
-    st.header('Please fill this out before starting!')
-    st.text_input('Enter username')
-    st.number_input('Age', min_value=18, max_value=100)
-    st.selectbox('Gender', ('Male', 'Female', 'Other'))
-    st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
-    st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
-    if st.button('Submit'):
-        ask_dems = False
-    
-
-    if not ask_dems:
+    else:
         st.header('Which face is more aggressive?')
         
         # Download the model file

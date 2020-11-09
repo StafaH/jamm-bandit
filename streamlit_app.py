@@ -26,6 +26,7 @@ def main():
     
     #Demographics
     st.header('Please fill this out before starting!')
+    st.text_input('Age:')
     st.number_input('Age', min_value=12, max_value=100)
     st.selectbox('Gender', ('Male', 'Female', 'Other'))
     st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
@@ -43,14 +44,6 @@ def main():
     # Load the StyleGAN2 Model
     G = load_model()
     G.eval()
-    # Feature Sliders 
-    #st.sidebar.title('Please fill this out before starting!')
-    #st.sidebar.number_input('Age', min_value=12, max_value=100)
-    #st.sidebar.selectbox('Gender', ('Male', 'Female', 'Other'))
-    #st.sidebar.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
-    #st.sidebar.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
-    #st.sidebar.button('Submit')
-    #default_control_features = ['Male']
     # Update the weights
     #rnd = np.random.RandomState(6600)
     #latents = rnd.randn(512)

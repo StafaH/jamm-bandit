@@ -84,13 +84,15 @@ def display_faces_page():
     results = client.results
     user = results[state.username]
 
+    reward = 0
+
     if col1.button('Left'):
         new_result = {
             'reward': "yes",
             'latents': weights_str
         }
         user.insert_one(new_result)
-        state.rewards.append(1)
+        reward = 0
     
     if col2.button('Right'):
         new_result = {
@@ -98,10 +100,13 @@ def display_faces_page():
             'latents': weights_str
         }
         user.insert_one(new_result)
-        state.rewards.append(0)
-
+        reward = 1
+        
     if st.button('There is something wrong with this picture!'):
         pass
+
+    state.rewards.append(reward)
+    
 
     st.text(len(state.rewards))
     st.text(state.rewards)

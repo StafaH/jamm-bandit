@@ -20,88 +20,110 @@ def main():
     # Set up database connection
     client = get_database_connection()
 
-    # Generate random number for new user
-    if not state.user_id:
-        state.user_id = get_unique_user_id()
-
-    # Enter demographic information to database
-
-    # Hello User random_id
-
     # Enter reward (yes/no, left/right, 0/1) into database along with latent encoding for that image
 
-
-    results = client.results
-    now = datetime.now()
-    user = results[get_unique_user_id()]
-
-    submitted = False
-    if not submitted:
-        #Instructions
-        st.title("Thank you for your interest in our app!")
-        st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
-        st.title("After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
+    if not state.submitted:
+        display_intro_page()
+    else:
+        display_faces()
         
-        #Demographics
-        st.header('Please fill this out before starting!')
-        st.text_input('Enter username')
-        st.number_input('Age', min_value=18, max_value=100)
-        st.selectbox('Gender', ('Male', 'Female', 'Other'))
-        st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
-        st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
-        if st.button('Submit'):
-            submitted = True
-    
-    if submitted:
-        st.header('Which face is more aggressive?')
-        
-        # Download the model file
-        download_file('Gs.pth')
-        
-        # Load the StyleGAN2 Model
-        G = load_model()
-        G.eval()
-        
-        # Update the weights
-        #rnd = np.random.RandomState(6600)
-        #latents = rnd.randn(512)
-        weights = random_weights()
-        weights_str = np.array_str(weights, precision = 6, suppress_small = True)
-        
-        # Generate the image
-        image_out = generate_image(G, weights)
-        image_out2 = generate_image(G, weights)
-        
-        # Output the image
-        col1, col2 = st.beta_columns(2)
-        col1.image(image_out, use_column_width=True)
-        col2.image(image_out2, use_column_width=True)
-        
-        if col1.button('Left'):
-            new_result = {
-                'reward': "yes",
-                'latents': weights_str
-            }
-            user.insert_one(new_result)
-        
-        if col2.button('Right'):
-            new_result = {
-                'reward': "no",
-                'latents': weights_str
-            }
-            user.insert_one(new_result)
-            
-        if st.button('There is something wrong with this picture!'):
-            pass
-    
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
-def get_unique_user_id():
-    random_id = np.random.randint(0, 10000)
+
+def display_intro_page():
+
+    state = _get_state()
+
+    #Instructions
+    st.title("Thank you for your interest in our app!")
+    st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
+    st.title("After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
+    
+    #Demographics
+    st.header('Please fill this out before starting!')
+    state.username = st.text_input('Enter username')
+    state.age = st.number_input('Age', min_value=18, max_value=100)
+    state.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
+    state.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    state.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    
+    if st.button('Submit'):
+        add_user_to_database()
+
+        # TODO: Check if username is empty  
+        state.submitted = True
+
+
+def display_faces():
+
+    state = _get_state()
+    
+    st.header('Which face is more aggressive?')
+    
+    # Download the model file
+    download_file('Gs.pth')
+    
+    # Load the StyleGAN2 Model
+    G = load_model()
+    G.eval()
+    
+    # Update the weights
+    #rnd = np.random.RandomState(6600)
+    #latents = rnd.randn(512)
+    weights = random_weights()
+    weights_str = np.array_str(weights, precision = 6, suppress_small = True)
+    
+    # Generate the image
+    image_out = generate_image(G, weights)
+    image_out2 = generate_image(G, weights)
+    
+    # Output the image
+    col1, col2 = st.beta_columns(2)
+    col1.image(image_out, use_column_width=True)
+    col2.image(image_out2, use_column_width=True)
     
     client = get_database_connection()
+    results = client.results
+    now = datetime.now()
+    user = results[state.username]
 
-    client.users.find_one({"user_id": str(random_id)})
+    if col1.button('Left'):
+        new_result = {
+            'reward': "yes",
+            'latents': weights_str
+        }
+        user.insert_one(new_result)
+    
+    if col2.button('Right'):
+        new_result = {
+            'reward': "no",
+            'latents': weights_str
+        }
+        user.insert_one(new_result)
+        
+    if st.button('There is something wrong with this picture!'):
+        pass
+
+def add_user_to_database(): 
+    state = _get_state()
+    client = get_database_connection()
+    users = client.users
+
+    user_list = users['user_list']
+
+    myquery = { "username": state.username }
+    user_dict = user_list.find(myquery)
+    user_dict = list(user_dict)
+
+    if not user_dict:
+        new_user = {
+            'username': state.username,
+            'age': state.age,
+            'gender': state.gender,
+            'ethnicity': state.ethnicity,
+            'politics': state.politics
+        }
+        user_list.insert_one(new_user)
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():

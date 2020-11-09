@@ -1,6 +1,22 @@
 import numpy as np
 import statsmodels.api as sm
 
+def random_latents():
+    weights = np.random.normal(loc=0, scale=1.0, size=(512,))
+    return weights
+
+def thompson_sample(observation, prior):
+    weights = np.random.normal(loc=0, scale=1.0, size=(512,))
+    return weights
+
+def hill_climbing():
+    weights = np.random.normal(loc=0, scale=1.0, size=(512,))
+    return weights
+
+def limited_thompson_sample():
+    weights = np.random.normal(loc=0, scale=1.0, size=(512,))
+    return weights
+
 #features = 20 # would normally by 512
 #trials = 1000 
 #coef = np.zeros(features,) # this is the prior
@@ -27,8 +43,4 @@ def logistic_reg(coef):
     #print(result.summary())
     
     return coef # updates coefficients
-
-def random_weights():
-    weights = np.random.normal(loc=0, scale=1.0, size=(512,))
-    return weights
-
+    

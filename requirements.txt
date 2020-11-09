@@ -19,4 +19,5 @@ statsmodels
 pymongo
 dnspython
 pyopenssl
+pymc3
 streamlit-0.68.0-py2.py3-none-any.whl

@@ -10,7 +10,8 @@ from streamlit.report_thread import get_report_ctx
 from streamlit.server.server import Server
 from streamlit.hashing import _CodeHasher
 from pymongo import MongoClient
-from logistic_regression import random_weights
+
+import bandit_algos
 
 def main():
 
@@ -25,7 +26,7 @@ def main():
     if not state.submitted:
         display_intro_page()
     else:
-        display_faces()
+        display_faces_page()
         
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
@@ -50,11 +51,11 @@ def display_intro_page():
     if st.button('Submit'):
         add_user_to_database()
 
-        # TODO: Check if username is empty  
+        # TODO: Check if username is empty also check if the demographic of this user changed 
         state.submitted = True
 
 
-def display_faces():
+def display_faces_page():
 
     state = _get_state()
     
@@ -70,7 +71,7 @@ def display_faces():
     # Update the weights
     #rnd = np.random.RandomState(6600)
     #latents = rnd.randn(512)
-    weights = random_weights()
+    weights = bandit_algos.random_latents()
     weights_str = np.array_str(weights, precision = 6, suppress_small = True)
     
     # Generate the image
@@ -129,10 +130,6 @@ def add_user_to_database():
 def get_database_connection():
     return MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")
 
-# @st.cache(hash_funcs={DBConnection: id})
-# def get_users(connection):
-#     # Note: We assume that connection is of type DBConnection.
-#     return connection.execute_sql('SELECT * from Users')
 
 @st.cache(show_spinner=False)
 def generate_image(G, weights):

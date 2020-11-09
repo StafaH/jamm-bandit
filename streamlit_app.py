@@ -18,6 +18,9 @@ def main():
     # Session state for persistent values
     state = _get_state()
 
+    if not state.rewards:
+        state.rewards = []
+
     if not state.submitted:
         display_intro_page()
     else:
@@ -49,7 +52,6 @@ def display_intro_page():
         # TODO: Check if username is empty also check if the demographic of this user changed 
         state.submitted = True
 
-
 def display_faces_page():
 
     state = _get_state()
@@ -71,20 +73,16 @@ def display_faces_page():
     
     # Generate the image
     image_out = generate_image(G, weights)
-    image_out2 = generate_image(G, weights)
+    #image_out2 = generate_image(G, weights)
     
     # Output the image
     col1, col2 = st.beta_columns(2)
     col1.image(image_out, use_column_width=True)
-    col2.image(image_out2, use_column_width=True)
+    col2.image(image_out, use_column_width=True)
     
     client = get_database_connection()
     results = client.results
-    now = datetime.now()
     user = results[state.username]
-
-    if not state.counter:
-        state.counter = 0
 
     if col1.button('Left'):
         new_result = {
@@ -92,7 +90,7 @@ def display_faces_page():
             'latents': weights_str
         }
         user.insert_one(new_result)
-        state.counter += 1
+        state.rewards.append(1)
     
     if col2.button('Right'):
         new_result = {
@@ -100,12 +98,13 @@ def display_faces_page():
             'latents': weights_str
         }
         user.insert_one(new_result)
-        state.counter += 1
-        
+        state.rewards.append(0)
+
     if st.button('There is something wrong with this picture!'):
         pass
 
-    st.markdown(f'Faces Viewed: = {state.counter}')
+    st.text(len(state.rewards))
+    st.text(state.rewards)
 
 @st.cache
 def add_user_to_database(): 

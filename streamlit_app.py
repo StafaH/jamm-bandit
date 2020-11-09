@@ -13,11 +13,28 @@ from pymongo import MongoClient
 from logistic_regression import random_weights
 
 def main():
+<<<<<<< Updated upstream
     # session state for persistent values
+=======
+
+    # Session state for persistent values
+>>>>>>> Stashed changes
     state = _get_state()
     
     # Set up database connection
-    client = get_database_connection()  
+    client = get_database_connection()
+
+    # Generate random number for new user
+    if not state.user_id:
+        state.user_id = get_unique_user_id()
+
+    # Enter demographic information to database
+
+    # Hello User random_id
+
+    # Enter reward (yes/no, left/right, 0/1) into database along with latent encoding for that image
+
+
     results = client.results
     now = datetime.now()
     user = results[get_unique_user_id()]
@@ -83,11 +100,18 @@ def main():
     
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
+<<<<<<< Updated upstream
     
 @st.cache
+=======
+
+>>>>>>> Stashed changes
 def get_unique_user_id():
-    now = datetime.now()
-    return now.strftime("%m/%d/%Y, %H:%M:%S")
+    random_id = np.random.randint(0, 10000)
+    
+    client = get_database_connection()
+
+    client.users.find_one({"user_id": str(random_id)})
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():

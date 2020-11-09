@@ -29,7 +29,7 @@ def main():
     now = datetime.now()
     user = results[get_unique_user_id()]
 
-    st.title('Is this face warm?')
+    st.title('Which face is more aggressive?')
 
     # Download the model file
     download_file('Gs.pth')

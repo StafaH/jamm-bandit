@@ -63,14 +63,14 @@ def main():
     col2.image(image_out2, use_column_width=True)
     
 
-    if col1.button('This one'):
+    if col1.button('Left'):
         new_result = {
             'reward': "yes",
             'latents': weights_str
         }
         user.insert_one(new_result)
 
-    if col2.button('This one'):
+    if col2.button('Right'):
         new_result = {
             'reward': "no",
             'latents': weights_str

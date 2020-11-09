@@ -22,6 +22,8 @@ def main():
     now = datetime.now()
     user = results[get_unique_user_id()]
 
+    ask_dems = True
+    
     #Instructions
     st.title("Thank you for your interest in our app!")
     st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
@@ -34,50 +36,51 @@ def main():
     st.selectbox('Gender', ('Male', 'Female', 'Other'))
     st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
     st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
-    st.button('Submit')    
+    if st.button('Submit'):
+        ask_dems = False
     
 
-    st.header('Which face is more aggressive?')
-
-
-    # Download the model file
-    download_file('Gs.pth')
-    
-    # Load the StyleGAN2 Model
-    G = load_model()
-    G.eval()
-    
-    # Update the weights
-    #rnd = np.random.RandomState(6600)
-    #latents = rnd.randn(512)
-    weights = random_weights()
-    weights_str = np.array_str(weights, precision = 6, suppress_small = True)
-    
-    # Generate the image
-    image_out = generate_image(G, weights)
-    image_out2 = generate_image(G, weights)
-    
-    # Output the image
-    col1, col2 = st.beta_columns(2)
-    col1.image(image_out, use_column_width=True)
-    col2.image(image_out2, use_column_width=True)
-
-    if col1.button('Left'):
-        new_result = {
-            'reward': "yes",
-            'latents': weights_str
-        }
-        user.insert_one(new_result)
-
-    if col2.button('Right'):
-        new_result = {
-            'reward': "no",
-            'latents': weights_str
-        }
-        user.insert_one(new_result)
+    if not ask_dems:
+        st.header('Which face is more aggressive?')
         
-    if st.button('There is something wrong with this picture!'):
-        pass
+        # Download the model file
+        download_file('Gs.pth')
+        
+        # Load the StyleGAN2 Model
+        G = load_model()
+        G.eval()
+        
+        # Update the weights
+        #rnd = np.random.RandomState(6600)
+        #latents = rnd.randn(512)
+        weights = random_weights()
+        weights_str = np.array_str(weights, precision = 6, suppress_small = True)
+        
+        # Generate the image
+        image_out = generate_image(G, weights)
+        image_out2 = generate_image(G, weights)
+        
+        # Output the image
+        col1, col2 = st.beta_columns(2)
+        col1.image(image_out, use_column_width=True)
+        col2.image(image_out2, use_column_width=True)
+        
+        if col1.button('Left'):
+            new_result = {
+                'reward': "yes",
+                'latents': weights_str
+            }
+            user.insert_one(new_result)
+        
+        if col2.button('Right'):
+            new_result = {
+                'reward': "no",
+                'latents': weights_str
+            }
+            user.insert_one(new_result)
+            
+        if st.button('There is something wrong with this picture!'):
+            pass
     
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()

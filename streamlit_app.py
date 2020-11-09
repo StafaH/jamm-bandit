@@ -17,11 +17,6 @@ def main():
 
     # Session state for persistent values
     state = _get_state()
-    
-    # Set up database connection
-    client = get_database_connection()
-
-    # Enter reward (yes/no, left/right, 0/1) into database along with latent encoding for that image
 
     if not state.submitted:
         display_intro_page()
@@ -88,12 +83,16 @@ def display_faces_page():
     now = datetime.now()
     user = results[state.username]
 
+    if not state.counter:
+        state.counter = 0
+
     if col1.button('Left'):
         new_result = {
             'reward': "yes",
             'latents': weights_str
         }
         user.insert_one(new_result)
+        state.counter += 1
     
     if col2.button('Right'):
         new_result = {
@@ -101,10 +100,14 @@ def display_faces_page():
             'latents': weights_str
         }
         user.insert_one(new_result)
+        state.counter += 1
         
     if st.button('There is something wrong with this picture!'):
         pass
 
+    st.markdown(f'Faces Viewed: = {state.counter}')
+
+@st.cache
 def add_user_to_database(): 
     state = _get_state()
     client = get_database_connection()

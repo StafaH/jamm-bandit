@@ -55,9 +55,12 @@ def main():
 
     # Generate the image
     image_out = generate_image(G, weights)
+    image_out2 = generate_image(G, weights)
 
     # Output the image
-    st.image(image_out, use_column_width=True)
+    col1, col2 = st.beta_columns(2)
+    col1.image(image_out, use_column_width=True)
+    col2.image(image_out2, use_column_width=True)
     
 
     if st.button('Yes'):

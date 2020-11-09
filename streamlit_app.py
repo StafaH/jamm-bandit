@@ -39,7 +39,7 @@ def main():
     G.eval()
 
 	# Demographic page
-	st.write.title('Please fill this out before starting!')
+	st.write('Please fill this out before starting!')
 	st.slider('Age')
 	st.write.number_input('Age', min_value=12, max_value=100)
 	st.selectbox('Gender',('Male', 'Female', 'Other'))

@@ -46,7 +46,7 @@ def display_intro_page(state):
     state.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
     
     if st.button('Submit'):
-        add_user_to_database()
+        add_user_to_database(state)
 
         # TODO: Check if username is empty also check if the demographic of this user changed 
         state.submitted = True
@@ -62,7 +62,7 @@ def display_faces_page(state):
     G = load_model()
     G.eval()
     
-    client = get_database_connection(state)
+    client = get_database_connection()
     results = client.results
     basic = results['basic']
 

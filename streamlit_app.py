@@ -23,16 +23,14 @@ def main():
         state.rewards = []
 
     if not state.submitted:
-        display_intro_page()
+        display_intro_page(state)
     else:
-        display_faces_page()
+        display_faces_page(state)
         
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
 
-def display_intro_page():
-
-    state = _get_state()
+def display_intro_page(state):
 
     #Instructions
     st.title("Thank you for your interest in our app!")
@@ -53,9 +51,7 @@ def display_intro_page():
         # TODO: Check if username is empty also check if the demographic of this user changed 
         state.submitted = True
 
-def display_faces_page():
-
-    state = _get_state()
+def display_faces_page(state):
     
     st.header('Which face is more aggressive?')
     
@@ -66,7 +62,7 @@ def display_faces_page():
     G = load_model()
     G.eval()
     
-    client = get_database_connection()
+    client = get_database_connection(state)
     results = client.results
     basic = results['basic']
 
@@ -109,8 +105,7 @@ def display_faces_page():
     st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
 
 @st.cache
-def add_user_to_database(): 
-    state = _get_state()
+def add_user_to_database(state): 
     client = get_database_connection()
 
     results = client.results

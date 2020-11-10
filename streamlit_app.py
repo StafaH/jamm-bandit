@@ -87,7 +87,7 @@ def display_faces_page():
     basic = results['basic']
 
     myquery = { "username": state.username }
-    user_dict = basic.find(myquery)
+    user_dict = basic.find_one(myquery)
     
     rewards_list = list(user_dict['rewards'])
     weights_list = list(user_dict['weights'])

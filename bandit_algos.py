@@ -48,7 +48,7 @@ def magnitude_shift(means, observation):
         new_weight = np.clip(new_weight, -3, 3)
         new_weights.append(new_weight)
     
-    return new_weights
+    return new_weights, new_means
             
     # normal dist with mean --> sample from it
     # input is the mean and yes/no reward

@@ -48,6 +48,7 @@ def display_intro_page(state):
     
     if st.button('Submit'):
         add_user_to_database(state)
+        state.means = np.zeros(512)
 
         # TODO: Check if username is empty also check if the demographic of this user changed 
         state.submitted = True
@@ -92,6 +93,11 @@ def display_faces_page(state):
     
     # Completely random sampling
     weights = bandit_algos.random_latents()
+    
+    # Magnitude shift sampling
+    # if database for username is empty, all means are 0
+    if len(rewards_list) > 0:
+        weights, state.means = bandit_algos.magnitude_shift(state.means, rewards_list[-1])
     
     # Thompson Sampling 
     state.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]

@@ -98,6 +98,7 @@ def display_faces_page(state):
     # if database for username is empty, all means are 0
     if len(rewards_list) > 0:
         weights, state.means = bandit_algos.magnitude_shift(state.means, rewards_list[-1])
+        weights = np.asarray(weights)
     
     # Thompson Sampling 
     state.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]

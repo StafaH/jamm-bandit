@@ -131,8 +131,8 @@ def add_user_to_database():
             'ethnicity': state.ethnicity,
             'politics': state.politics,
             'rewards': [],
-            'weights': np.zeros((512,)),
-            'final_dist': np.zeros((512,4)) # mu, sigma, alpha, beta
+            'weights': list(np.zeros((512,))),
+            'final_dist': list(np.zeros((512,4))) # mu, sigma, alpha, beta
         }
         basic.insert_one(new_user)
     

@@ -1,0 +1,11 @@
+import numpy as np
+import pandas as pd
+dat = pd.read_csv("/Users/mollysun/OneDrive - University of Toronto/Research/jamm-bandit/4molly.csv")
+h = dat["weights"]
+biglist = []
+
+for i in range(0, len(dat)):
+    hi = list(dat["weights"][0])
+    hi = [ x for x in hi if x.isdigit() ]
+    hi = list(map(float, hi))
+    biglist.append(hi)

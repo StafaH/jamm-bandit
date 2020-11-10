@@ -158,22 +158,22 @@ def display_faces_page(session):
     '''
 
 def display_feature_sidebar(session):
-    session.age_magnitude = st.sidebar.slider('age', -10.00, 10.00, 0.0, 0.1)
-    session.gender_magnitude = st.sidebar.slider('gender', -10.00, 10.00, 0.0, 0.1)
-    session.smile_magnitude = st.sidebar.slider('smile', -10.00, 10.00, 0.0, 0.1)
-    session.pitch_magnitude = st.sidebar.slider('pitch', -10.00, 10.00, 0.0, 0.1)
-    session.roll_magnitude = st.sidebar.slider('roll', -10.00, 10.00, 0.0, 0.1)
-    session.yaw_magnitude = st.sidebar.slider('yaw', -10.00, 10.00, 0.0, 0.1)
-    session.eyebrow_magnitude = st.sidebar.slider('eye-eyebrow distance', -10.00, 10.00, 0.0, 0.1)
-    session.eyedist_magnitude = st.sidebar.slider('eye distance', -10.00, 10.00, 0.0, 0.1)
-    session.eyeratio_magnitude = st.sidebar.slider('eye ratio', -10.00, 10.00, 0.0, 0.1)
-    session.eyeopen_magnitude = st.sidebar.slider('eyes open', -10.00, 10.00, 0.0, 0.1)
-    session.noseratio_magnitude = st.sidebar.slider('nose ratio', -10.00, 10.00, 0.0, 0.1)
-    session.nosetip_magnitude = st.sidebar.slider('nose tip', -1.00, 1.00)
-    session.nousemouthdist_magnitude = st.sidebar.slider('nose-mouth distance', -10.00, 10.00, 0.0, 0.1)
-    session.mouthratio_magnitude = st.sidebar.slider('mouth ratio', -10.00, 10.00, 0.0, 0.1)
-    session.mouthopen_magnitude = st.sidebar.slider('mouth open', -10.00, 10.00, 0.0, 0.1)
-    session.lipratio_magnitude = st.sidebar.slider('lip ratio', -10.00, 10.00, 0.0, 0.1)
+    session.age_magnitude = st.sidebar.slider('age', -1000.00, 1000.00, 0.0, 0.1)
+    session.gender_magnitude = st.sidebar.slider('gender', -1000.00, 1000.00, 0.0, 0.1)
+    session.smile_magnitude = st.sidebar.slider('smile', -1000.00, 1000.00, 0.0, 0.1)
+    session.pitch_magnitude = st.sidebar.slider('pitch', -1000.00, 1000.00, 0.0, 0.1)
+    session.roll_magnitude = st.sidebar.slider('roll', -1000.00, 1000.00, 0.0, 0.1)
+    session.yaw_magnitude = st.sidebar.slider('yaw', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyebrow_magnitude = st.sidebar.slider('eye-eyebrow distance', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyedist_magnitude = st.sidebar.slider('eye distance', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyeratio_magnitude = st.sidebar.slider('eye ratio', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyeopen_magnitude = st.sidebar.slider('eyes open', -1000.00, 1000.00, 0.0, 0.1)
+    session.noseratio_magnitude = st.sidebar.slider('nose ratio', -1000.00, 1000.00, 0.0, 0.1)
+    session.nosetip_magnitude = st.sidebar.slider('nose tip', -100.00, 100.00)
+    session.nousemouthdist_magnitude = st.sidebar.slider('nose-mouth distance', -1000.00, 1000.00, 0.0, 0.1)
+    session.mouthratio_magnitude = st.sidebar.slider('mouth ratio', -1000.00, 1000.00, 0.0, 0.1)
+    session.mouthopen_magnitude = st.sidebar.slider('mouth open', -1000.00, 1000.00, 0.0, 0.1)
+    session.lipratio_magnitude = st.sidebar.slider('lip ratio', -1000.00, 1000.00, 0.0, 0.1)
 
 
 def initialize_thompson_sampling(session):

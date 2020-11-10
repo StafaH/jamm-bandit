@@ -115,12 +115,12 @@ def display_faces_page():
 def add_user_to_database(): 
     state = _get_state()
     client = get_database_connection()
-    users = client.users
 
-    user_list = users['user_list']
+    results = client.results
+    basic = results['basic']
 
     myquery = { "username": state.username }
-    user_dict = user_list.find(myquery)
+    user_dict = basic.find(myquery)
     user_dict = list(user_dict)
 
     if not user_dict:
@@ -129,29 +129,12 @@ def add_user_to_database():
             'age': state.age,
             'gender': state.gender,
             'ethnicity': state.ethnicity,
-            'politics': state.politics
+            'politics': state.politics,
+            'rewards': [],
+            'weights': np.zeros((512,)),
+            'final_dist': np.zeros((512,4)) # mu, sigma, alpha, beta
         }
-        user_list.insert_one(new_user)
-        
-        # Add an empty rewards table for this user
-        #results = client.results
-        #user = results[state.username]
-        #new_user_rewards = {
-        #    'id': 'r',
-        #    'rewards': []
-        #}
-        #user.insert_one(new_user_rewards)
-
-        # Add an empty rewards table for this user
-        results = client.results
-        user_rewards = results[state.username]
-
-        new_user_rewards = {
-            'id': 'r',
-            'rewards': []
-        }
-        user_rewards.insert_one(new_user_rewards)
-
+        basic.insert_one(new_user)
     
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})

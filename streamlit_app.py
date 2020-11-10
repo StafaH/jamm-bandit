@@ -69,7 +69,7 @@ def display_faces_page():
     #rnd = np.random.RandomState(6600)
     #latents = rnd.randn(512)
     weights = bandit_algos.random_latents()
-    weights = bandit_algos.logistic_reg(weights, )
+    #weights = bandit_algos.logistic_reg(weights, )
     weights_str = np.array_str(weights, precision = 6, suppress_small = True)
     
     # Generate the image

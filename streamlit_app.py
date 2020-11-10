@@ -13,6 +13,7 @@ from pymongo import MongoClient
 import pickle
 
 import bandit_algos
+from nig_normal import *
 
 def main():
 
@@ -23,16 +24,14 @@ def main():
         state.rewards = []
 
     if not state.submitted:
-        display_intro_page()
+        display_intro_page(state)
     else:
-        display_faces_page()
+        display_faces_page(state)
         
     # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
     state.sync()
 
-def display_intro_page():
-
-    state = _get_state()
+def display_intro_page(state):
 
     #Instructions
     st.title("Thank you for your interest in our app!")
@@ -48,14 +47,12 @@ def display_intro_page():
     state.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
     
     if st.button('Submit'):
-        add_user_to_database()
+        add_user_to_database(state)
 
         # TODO: Check if username is empty also check if the demographic of this user changed 
         state.submitted = True
 
-def display_faces_page():
-
-    state = _get_state()
+def display_faces_page(state):
     
     st.header('Which face is more aggressive?')
 
@@ -93,28 +90,33 @@ def display_faces_page():
     rewards_list = list(user_dict['rewards'])
     weights_list = list(user_dict['weights'])
     
-
+    # Completely random sampling
     weights = bandit_algos.random_latents()
     
+    # Thompson Sampling 
+    state.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]
+    x = 0
+
+    #weights = np.asarray([model.draw_expected_value(x) for model in state.models])
+
     # Generate the image
     image_out = generate_image(G, weights)
 
-    weights = bandit_algos.random_latents()
-    image_out2 = generate_image(G, weights)
+    #weights = bandit_algos.random_latents()
+    #image_out2 = generate_image(G, weights)
     
     # Output the image
     col1, col2 = st.beta_columns(2)
-    col1.image(image_out, use_column_width=True)
-    col2.image(image_out2, use_column_width=True)
-    
-    if col1.button('Left'):
+    st.image(image_out, use_column_width=True)
+    #col2.image(image_out2, use_column_width=True)
+    if col1.button('No'):
         rewards_list.append(0)
         weights_list.append(list(weights))
         basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
         basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
         
     
-    if col2.button('Right'):
+    if col2.button('Yes'):
         rewards_list.append(1)
         weights_list.append(list(weights))
         basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
@@ -124,10 +126,20 @@ def display_faces_page():
         pass
     
     st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
+    
+    #params = list(user_dict['final_dist'])
+    #final_params = list(user_dict['final_dist'])
+    '''
+    final_params = []
+    for model in state.models:
+        model.update_posterior(x, rewards_list[-1])
+        params = [model.mu, model.v, model.alpha, model.beta]
+        final_params.append(params)
+    basic.update_one({'username': state.username}, {'$set':{'final_dist': final_params}})
+    '''
 
-@st.cache
-def add_user_to_database(): 
-    state = _get_state()
+
+def add_user_to_database(state): 
     client = get_database_connection()
 
     results = client.results

@@ -105,7 +105,7 @@ def display_faces_page():
     if st.button('There is something wrong with this picture!'):
         pass
 
-    state.rewards.append(reward)
+    #state.rewards.append(reward)
     
 
     st.text(len(state.rewards))

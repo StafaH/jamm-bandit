@@ -69,6 +69,7 @@ def display_faces_page():
     #rnd = np.random.RandomState(6600)
     #latents = rnd.randn(512)
     weights = bandit_algos.random_latents()
+    weights = bandit_algos.logistic_reg(weights, )
     weights_str = np.array_str(weights, precision = 6, suppress_small = True)
     
     # Generate the image
@@ -82,16 +83,15 @@ def display_faces_page():
     
     client = get_database_connection()
     results = client.results
-    user = results[state.username]
-
-    reward = 0
+    user_results = results[state.username]
+    users = client.users
 
     if col1.button('Left'):
         new_result = {
             'reward': "yes",
             'latents': weights_str
         }
-        user.insert_one(new_result)
+        user_results.insert_one(new_result)
         reward = 0
     
     if col2.button('Right'):
@@ -99,7 +99,7 @@ def display_faces_page():
             'reward': "no",
             'latents': weights_str
         }
-        user.insert_one(new_result)
+        user_results.insert_one(new_result)
         reward = 1
         
     if st.button('There is something wrong with this picture!'):
@@ -129,9 +129,18 @@ def add_user_to_database():
             'age': state.age,
             'gender': state.gender,
             'ethnicity': state.ethnicity,
-            'politics': state.politics
+            'politics': state.politics,
         }
         user_list.insert_one(new_user)
+        
+        # Add an empty rewards table for this user
+        results = client.results
+        user = results[state.username]
+        new_user_rewards = {
+            'id': 'r',
+            'rewards': []
+        }
+        user.insert_one(new_user_rewards)
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():

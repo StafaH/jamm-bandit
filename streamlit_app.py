@@ -74,13 +74,13 @@ def display_faces_page(state):
     weights_list = list(user_dict['weights'])
     
     # Completely random sampling
-    #weights = bandit_algos.random_latents()
+    weights = bandit_algos.random_latents()
     
     # Thompson Sampling 
     state.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]
     x = 0
 
-    weights = np.asarray([model.draw_expected_value(x) for model in state.models])
+    #weights = np.asarray([model.draw_expected_value(x) for model in state.models])
 
     # Generate the image
     image_out = generate_image(G, weights)

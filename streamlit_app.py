@@ -56,7 +56,7 @@ def display_faces_page(state):
     
     st.header('Which face is more aggressive?')
 
-    st.sidebar.slider('age', -1.00.00, 1.00)
+    st.sidebar.slider('age', -1.00, 1.00)
     st.sidebar.slider('gender', -1.00, 1.00)
     st.sidebar.slider('smile', -1.00, 1.00)
     st.sidebar.slider('pitch', -1.00, 1.00)

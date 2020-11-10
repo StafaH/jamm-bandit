@@ -80,8 +80,8 @@ def display_faces_page():
     #rnd = np.random.RandomState(6600)
     #latents = rnd.randn(512)
     weights = bandit_algos.random_latents()
-    observations = np.repeat(rewards_list[-1], 512)
-    #weights = bandit_algos.logistic_reg(weights, observations)
+    observations = np.repeat(rewards_list[-1], 512).astype('float64')
+    weights = bandit_algos.logistic_reg(weights, observations)
     weights_str = np.array_str(weights, precision = 6, suppress_small = True)
     
     # Generate the image

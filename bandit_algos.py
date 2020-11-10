@@ -36,9 +36,11 @@ def logistic_reg(weights, observations):
     '''
     #labels = rand_bin_array(weights, trials)
     
-    result = sm.Logit(observations,weights).fit()
+    result = sm.Logit(observations, weights).fit()
     weights = result.params
+    st.text(result.params)
     weights = np.clip(weights, -3, 3)
+    st.text(result.summary())
     #p_vals = result.pvalues
     #print(result.summary())
     

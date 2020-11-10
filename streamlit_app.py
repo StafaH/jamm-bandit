@@ -76,22 +76,19 @@ def display_faces_page():
     rewards_list = list(user_dict['rewards'])
     weights_list = list(user_dict['weights'])
     
-    # Update the weights
-    #rnd = np.random.RandomState(6600)
-    #latents = rnd.randn(512)
+
     weights = bandit_algos.random_latents()
-    observations = np.repeat(rewards_list[-1], 512).astype('float64')
-    weights = bandit_algos.logistic_reg(weights, observations)
-    weights_str = np.array_str(weights, precision = 6, suppress_small = True)
     
     # Generate the image
     image_out = generate_image(G, weights)
-    #image_out2 = generate_image(G, weights)
+
+    weights = bandit_algos.random_latents()
+    image_out2 = generate_image(G, weights)
     
     # Output the image
     col1, col2 = st.beta_columns(2)
     col1.image(image_out, use_column_width=True)
-    col2.image(image_out, use_column_width=True)
+    col2.image(image_out2, use_column_width=True)
     
     if col1.button('Left'):
         rewards_list.append(0)
@@ -108,11 +105,8 @@ def display_faces_page():
         
     if st.button('There is something wrong with this picture!'):
         pass
-
-    #state.rewards.append(reward)
     
-    st.text(len(state.rewards))
-    st.text(str(rewards_list))
+    st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
 
 @st.cache
 def add_user_to_database(): 

@@ -129,7 +129,7 @@ def add_user_to_database():
             'age': state.age,
             'gender': state.gender,
             'ethnicity': state.ethnicity,
-            'politics': state.politics,
+            'politics': state.politics
         }
         user_list.insert_one(new_user)
         

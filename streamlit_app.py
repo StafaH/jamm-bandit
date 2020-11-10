@@ -134,13 +134,13 @@ def add_user_to_database():
         user_list.insert_one(new_user)
         
         # Add an empty rewards table for this user
-        results = client.results
-        user = results[state.username]
-        new_user_rewards = {
-            'id': 'r',
-            'rewards': []
-        }
-        user.insert_one(new_user_rewards)
+        #results = client.results
+        #user = results[state.username]
+        #new_user_rewards = {
+        #    'id': 'r',
+        #    'rewards': []
+        #}
+        #user.insert_one(new_user_rewards)
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():

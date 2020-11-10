@@ -112,12 +112,14 @@ def display_faces_page(state):
     
     #params = list(user_dict['final_dist'])
     #final_params = list(user_dict['final_dist'])
+    '''
     final_params = []
     for model in state.models:
         model.update_posterior(x, rewards_list[-1])
         params = [model.mu, model.v, model.alpha, model.beta]
         final_params.append(params)
     basic.update_one({'username': state.username}, {'$set':{'final_dist': final_params}})
+    '''
 
 
 def add_user_to_database(state): 

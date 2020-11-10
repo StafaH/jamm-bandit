@@ -84,24 +84,34 @@ def display_faces_page():
     
     client = get_database_connection()
     results = client.results
-    user_results = results[state.username]
-    users = client.users
+    basic = results['basic']
+
+    myquery = { "username": state.username }
+    user_dict = basic.find(myquery)
+    
+    rewards_list = user_dict['rewards']
+    weights_list = user_dict['weights']
 
     if col1.button('Left'):
         new_result = {
             'reward': "yes",
             'latents': weights_str
         }
-        user_results.insert_one(new_result)
-        reward = 0
+        rewards_list.append(0)
+        weights_list.append(weights)
+        basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
+        basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
+        
     
     if col2.button('Right'):
         new_result = {
             'reward': "no",
             'latents': weights_str
         }
-        user_results.insert_one(new_result)
-        reward = 1
+        rewards_list.append(1)
+        weights_list.append(weights)
+        basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
+        basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
         
     if st.button('There is something wrong with this picture!'):
         pass
@@ -133,7 +143,7 @@ def add_user_to_database():
             'politics': state.politics,
             'rewards': [],
             'weights': np.zeros((1,512)).tolist(),
-            'final_dist': np.zeros((4,512)).tolist() # mu, sigma, alpha, beta
+            'final_dist': np.zeros((512,4)).tolist() # mu, sigma, alpha, beta
         }
         basic.insert_one(new_user)
     

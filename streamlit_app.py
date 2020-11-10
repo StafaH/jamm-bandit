@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import urllib
+from pathlib import Path
 from datetime import datetime
 import torch
 import stylegan2
@@ -23,10 +24,12 @@ def main():
     if not session.initialized:
         initialize_thompson_sampling(session)
         session.initialized = True
+        session.controls = get_control_latent_vectors('stylegan2directions/')
 
     if not session.submitted:
         display_intro_page(session)
     else:
+        display_feature_sidebar(session)
         display_faces_page(session)
 
 
@@ -75,22 +78,43 @@ def display_faces_page(session):
     # Completely random sampling
     if not session.first_random:
         weights = bandit_algos.random_latents()
+        session.weights = weights
         session.first_random = True
     
     # Magnitude shift sampling
     # if database for username is empty, all means are 0
-    if len(rewards_list) > 0:
-        means = []
-        for i in range(0, len(final_list)):
-            means.append(final_list[i][0])
-        weights, means = bandit_algos.magnitude_shift(means, rewards_list[-1])
-        weights = np.asarray(weights)
+    # if len(rewards_list) > 0:
+    #     means = []
+    #     for i in range(0, len(final_list)):
+    #         means.append(final_list[i][0])
+    #     weights, means = bandit_algos.magnitude_shift(means, rewards_list[-1])
+    #     weights = np.asarray(weights)
     
+    
+
     # Thompson Sampling
     
     x = 0
 
     # Generate the image
+    weights = session.weights
+    weights = weights + (session.age_magnitude * session.controls['age'])
+    weights = weights + (session.gender_magnitude * session.controls['gender'])
+    weights = weights + (session.smile_magnitude * session.controls['smile'])
+    weights = weights + (session.pitch_magnitude * session.controls['pitch'])
+    weights = weights + (session.roll_magnitude * session.controls['roll'])
+    weights = weights + (session.yaw_magnitude * session.controls['yaw'])
+    weights = weights + (session.eyebrow_magnitude * session.controls['eye_eyebrow_distance'])
+    weights = weights + (session.eyedist_magnitude * session.controls['eye_distance'])
+    weights = weights + (session.eyeratio_magnitude * session.controls['eye_ratio'])
+    weights = weights + (session.eyeopen_magnitude * session.controls['eyes_open'])
+    weights = weights + (session.noseratio_magnitude * session.controls['nose_ratio'])
+    weights = weights + (session.nosetip_magnitude * session.controls['nose_tip'])
+    weights = weights + (session.nousemouthdist_magnitude * session.controls['nose_mouth_distance'])
+    weights = weights + (session.mouthratio_magnitude * session.controls['mouth_ratio'])
+    weights = weights + (session.mouthopen_magnitude * session.controls['mouth_open'])
+    weights = weights + (session.lipratio_magnitude * session.controls['lip_ratio'])
+    
     image_out = generate_image(G, weights)
     
     # Output the image
@@ -116,11 +140,11 @@ def display_faces_page(session):
     
     st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
     
-    final_params = []
-    for i in range(0, len(means)):
-        params = [means[i], 1, 1, 1]
-        final_params.append(params)
-    basic.update_one({'username': session.username}, {'$set':{'final_dist': final_params}})   
+    # final_params = []
+    # for i in range(0, len(means)):
+    #     params = [means[i], 1, 1, 1]
+    #     final_params.append(params)
+    # basic.update_one({'username': session.username}, {'$set':{'final_dist': final_params}})   
         
     #params = list(user_dict['final_dist'])
     #final_params = list(user_dict['final_dist'])
@@ -134,22 +158,22 @@ def display_faces_page(session):
     '''
 
 def display_feature_sidebar(session):
-    st.sidebar.slider('age', -1.00, 1.00)
-    st.sidebar.slider('gender', -1.00, 1.00)
-    st.sidebar.slider('smile', -1.00, 1.00)
-    st.sidebar.slider('pitch', -1.00, 1.00)
-    st.sidebar.slider('roll', -1.00, 1.00)
-    st.sidebar.slider('yaw', -1.00, 1.00)
-    st.sidebar.slider('eye-eyebrow distance', -1.00, 1.00)
-    st.sidebar.slider('eye distance', -1.00, 1.00)
-    st.sidebar.slider('eye ratio', -1.00, 1.00)
-    st.sidebar.slider('eyes open', -1.00, 1.00)
-    st.sidebar.slider('nose ratio', -1.00, 1.00)
-    st.sidebar.slider('nose tip', -1.00, 1.00)
-    st.sidebar.slider('nose-mouth distance', -1.00, 1.00)
-    st.sidebar.slider('mouth ratio', -1.00, 1.00)
-    st.sidebar.slider('mouth open', -1.00, 1.00)
-    st.sidebar.slider('lip ratio', -1.00, 1.00)
+    session.age_magnitude = st.sidebar.slider('age', -10.00, 10.00, 0.0, 0.1)
+    session.gender_magnitude = st.sidebar.slider('gender', -10.00, 10.00, 0.0, 0.1)
+    session.smile_magnitude = st.sidebar.slider('smile', -10.00, 10.00, 0.0, 0.1)
+    session.pitch_magnitude = st.sidebar.slider('pitch', -10.00, 10.00, 0.0, 0.1)
+    session.roll_magnitude = st.sidebar.slider('roll', -10.00, 10.00, 0.0, 0.1)
+    session.yaw_magnitude = st.sidebar.slider('yaw', -10.00, 10.00, 0.0, 0.1)
+    session.eyebrow_magnitude = st.sidebar.slider('eye-eyebrow distance', -10.00, 10.00, 0.0, 0.1)
+    session.eyedist_magnitude = st.sidebar.slider('eye distance', -10.00, 10.00, 0.0, 0.1)
+    session.eyeratio_magnitude = st.sidebar.slider('eye ratio', -10.00, 10.00, 0.0, 0.1)
+    session.eyeopen_magnitude = st.sidebar.slider('eyes open', -10.00, 10.00, 0.0, 0.1)
+    session.noseratio_magnitude = st.sidebar.slider('nose ratio', -10.00, 10.00, 0.0, 0.1)
+    session.nosetip_magnitude = st.sidebar.slider('nose tip', -1.00, 1.00)
+    session.nousemouthdist_magnitude = st.sidebar.slider('nose-mouth distance', -10.00, 10.00, 0.0, 0.1)
+    session.mouthratio_magnitude = st.sidebar.slider('mouth ratio', -10.00, 10.00, 0.0, 0.1)
+    session.mouthopen_magnitude = st.sidebar.slider('mouth open', -10.00, 10.00, 0.0, 0.1)
+    session.lipratio_magnitude = st.sidebar.slider('lip ratio', -10.00, 10.00, 0.0, 0.1)
 
 
 def initialize_thompson_sampling(session):
@@ -183,6 +207,11 @@ def add_user_to_database(session):
 def get_database_connection():
     return MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")
 
+@st.cache
+def get_control_latent_vectors(path):
+    files = [x for x in Path(path).iterdir() if str(x).endswith('.npy')]
+    latent_vectors = {f.name[:-4]:np.load(f) for f in files}
+    return latent_vectors
 
 @st.cache(show_spinner=False)
 def generate_image(G, weights):

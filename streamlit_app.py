@@ -21,7 +21,6 @@ def main():
     session = SessionState.get(initialized = False, submitted = False, first_random = False)
     
     if not session.initialized:
-        session.means = np.zeros(512)
         initialize_thompson_sampling(session)
         session.initialized = True
 
@@ -71,6 +70,7 @@ def display_faces_page(session):
     
     rewards_list = list(user_dict['rewards'])
     weights_list = list(user_dict['weights'])
+    final_list = list(user_dict['final_dist'])
     
     # Completely random sampling
     if not session.first_random:
@@ -80,7 +80,10 @@ def display_faces_page(session):
     # Magnitude shift sampling
     # if database for username is empty, all means are 0
     if len(rewards_list) > 0:
-        weights, session.means = bandit_algos.magnitude_shift(session.means, rewards_list[-1])
+        means = []
+        for i in range(0, len(final_list)):
+            means.append(final_list[i][0])
+        weights, means = bandit_algos.magnitude_shift(means, rewards_list[-1])
         weights = np.asarray(weights)
     
     # Thompson Sampling
@@ -113,6 +116,12 @@ def display_faces_page(session):
     
     st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
     
+    final_params = []
+    for i in range(0, len(means)):
+        params = [means[i], 1, 1, 1]
+        final_params.append(params)
+    basic.update_one({'username': session.username}, {'$set':{'final_dist': final_params}})   
+        
     #params = list(user_dict['final_dist'])
     #final_params = list(user_dict['final_dist'])
     '''

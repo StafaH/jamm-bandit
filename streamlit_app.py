@@ -169,7 +169,7 @@ def display_feature_sidebar(session):
     session.eyeratio_magnitude = st.sidebar.slider('eye ratio', -1000.00, 1000.00, 0.0, 0.1)
     session.eyeopen_magnitude = st.sidebar.slider('eyes open', -1000.00, 1000.00, 0.0, 0.1)
     session.noseratio_magnitude = st.sidebar.slider('nose ratio', -1000.00, 1000.00, 0.0, 0.1)
-    session.nosetip_magnitude = st.sidebar.slider('nose tip', -100.00, 100.00)
+    session.nosetip_magnitude = st.sidebar.slider('nose tip', -1000.00, 1000.00, 0.0, 0.1)
     session.nousemouthdist_magnitude = st.sidebar.slider('nose-mouth distance', -1000.00, 1000.00, 0.0, 0.1)
     session.mouthratio_magnitude = st.sidebar.slider('mouth ratio', -1000.00, 1000.00, 0.0, 0.1)
     session.mouthopen_magnitude = st.sidebar.slider('mouth open', -1000.00, 1000.00, 0.0, 0.1)

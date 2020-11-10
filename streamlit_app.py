@@ -66,11 +66,22 @@ def display_faces_page():
     G = load_model()
     G.eval()
     
+    client = get_database_connection()
+    results = client.results
+    basic = results['basic']
+
+    myquery = { "username": state.username }
+    user_dict = basic.find_one(myquery)
+    
+    rewards_list = list(user_dict['rewards'])
+    weights_list = list(user_dict['weights'])
+    
     # Update the weights
     #rnd = np.random.RandomState(6600)
     #latents = rnd.randn(512)
     weights = bandit_algos.random_latents()
-    #weights = bandit_algos.logistic_reg(weights, )
+    observations = np.repeat(rewards_list[-1], 512)
+    weights = bandit_algos.logistic_reg(weights, observations)
     weights_str = np.array_str(weights, precision = 6, suppress_small = True)
     
     # Generate the image
@@ -82,16 +93,6 @@ def display_faces_page():
     col1.image(image_out, use_column_width=True)
     col2.image(image_out, use_column_width=True)
     
-    client = get_database_connection()
-    results = client.results
-    basic = results['basic']
-
-    myquery = { "username": state.username }
-    user_dict = basic.find_one(myquery)
-    
-    rewards_list = list(user_dict['rewards'])
-    weights_list = list(user_dict['weights'])
-
     if col1.button('Left'):
         rewards_list.append(0)
         weights_list.append(list(weights))

@@ -10,6 +10,7 @@ from streamlit.report_thread import get_report_ctx
 from streamlit.server.server import Server
 from streamlit.hashing import _CodeHasher
 from pymongo import MongoClient
+import pickle
 
 import bandit_algos
 
@@ -131,8 +132,8 @@ def add_user_to_database():
             'ethnicity': state.ethnicity,
             'politics': state.politics,
             'rewards': [],
-            'weights': list(np.zeros((512,))),
-            'final_dist': list(np.zeros((512,4))) # mu, sigma, alpha, beta
+            'weights': np.zeros((512,)).tolist(),
+            'final_dist': np.zeros((512,4)).tolist() # mu, sigma, alpha, beta
         }
         basic.insert_one(new_user)
     

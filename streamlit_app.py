@@ -93,23 +93,15 @@ def display_faces_page():
     weights_list = list(user_dict['weights'])
 
     if col1.button('Left'):
-        new_result = {
-            'reward': "yes",
-            'latents': weights_str
-        }
         rewards_list.append(0)
-        weights_list.append(weights)
+        weights_list.append(list(weights))
         basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
         basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
         
     
     if col2.button('Right'):
-        new_result = {
-            'reward': "no",
-            'latents': weights_str
-        }
         rewards_list.append(1)
-        weights_list.append(weights)
+        weights_list.append(list(weights))
         basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
         basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
         

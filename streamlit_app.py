@@ -58,7 +58,24 @@ def display_faces_page():
     state = _get_state()
     
     st.header('Which face is more aggressive?')
-    
+
+    st.sidebar.slider('age', -1, 1)
+    st.sidebar.slider('gender', -1, 1)
+    st.sidebar.slider('smile', -1, 1)
+    st.sidebar.slider('pitch', -1, 1)
+    st.sidebar.slider('roll', -1, 1)
+    st.sidebar.slider('yaw', -1, 1)
+    st.sidebar.slider('eye-eyebrow distance', -1, 1)
+    st.sidebar.slider('eye distance', -1, 1)
+    st.sidebar.slider('eye ratio', -1, 1)
+    st.sidebar.slider('eyes open', -1, 1)
+    st.sidebar.slider('nose ratio', -1, 1)
+    st.sidebar.slider('nose tip', -1, 1)
+    st.sidebar.slider('nose-mouth distance', -1, 1)
+    st.sidebar.slider('mouth ratio', -1, 1)
+    st.sidebar.slider('mouth open', -1, 1)
+    st.sidebar.slider('lip ratio', -1, 1)
+
     # Download the model file
     download_file('Gs.pth')
     

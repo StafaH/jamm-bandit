@@ -133,6 +133,18 @@ def add_user_to_database():
         }
         user_list.insert_one(new_user)
 
+        # Add an empty rewards table for this user
+        results = client.results
+        user_rewards = results[state.username]
+
+        new_user_rewards = {
+            'id': 'r',
+            'rewards': []
+        }
+        user_rewards.insert_one(new_user_rewards)
+
+    
+
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():
     return MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")

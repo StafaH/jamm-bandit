@@ -13,6 +13,7 @@ from pymongo import MongoClient
 import pickle
 
 import bandit_algos
+from nig_normal import *
 
 def main():
 
@@ -72,28 +73,33 @@ def display_faces_page(state):
     rewards_list = list(user_dict['rewards'])
     weights_list = list(user_dict['weights'])
     
-
-    weights = bandit_algos.random_latents()
+    # Completely random sampling
+    #weights = bandit_algos.random_latents()
     
+    # Thompson Sampling 
+    state.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]
+    x = 0
+
+    weights = np.asarray([model.draw_expected_value(x) for model in state.models])
+
     # Generate the image
     image_out = generate_image(G, weights)
 
-    weights = bandit_algos.random_latents()
-    image_out2 = generate_image(G, weights)
+    #weights = bandit_algos.random_latents()
+    #image_out2 = generate_image(G, weights)
     
     # Output the image
     col1, col2 = st.beta_columns(2)
-    col1.image(image_out, use_column_width=True)
-    col2.image(image_out2, use_column_width=True)
-    
-    if col1.button('Left'):
+    st.image(image_out, use_column_width=True)
+    #col2.image(image_out2, use_column_width=True)
+    if col1.button('No'):
         rewards_list.append(0)
         weights_list.append(list(weights))
         basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
         basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
         
     
-    if col2.button('Right'):
+    if col2.button('Yes'):
         rewards_list.append(1)
         weights_list.append(list(weights))
         basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
@@ -103,6 +109,16 @@ def display_faces_page(state):
         pass
     
     st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
+    
+    #params = list(user_dict['final_dist'])
+    #final_params = list(user_dict['final_dist'])
+    final_params = []
+    for model in state.models:
+        model.update_posterior(x, rewards_list[-1])
+        params = [model.mu, model.v, model.alpha, model.beta]
+        final_params.append(params)
+    basic.update_one({'username': state.username}, {'$set':{'final_dist': final_params}})
+
 
 def add_user_to_database(state): 
     client = get_database_connection()

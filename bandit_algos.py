@@ -6,11 +6,13 @@ from streamlit.hashing import _CodeHasher
 import numpy as np
 import statsmodels.api as sm
 
+from nig_normal import *
+
 def random_latents():
     weights = np.random.normal(loc=0, scale=1.0, size=(512,))
     return weights
 
-def bayesian_linear_reg(observation, prior):
+def thompson_sample(observation, prior):
     weights = np.random.normal(loc=0, scale=1.0, size=(512,))
     return weights
 

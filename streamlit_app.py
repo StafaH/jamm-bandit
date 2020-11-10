@@ -89,8 +89,8 @@ def display_faces_page():
     myquery = { "username": state.username }
     user_dict = basic.find(myquery)
     
-    rewards_list = user_dict['rewards']
-    weights_list = user_dict['weights']
+    rewards_list = list(user_dict['rewards'])
+    weights_list = list(user_dict['weights'])
 
     if col1.button('Left'):
         new_result = {

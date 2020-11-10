@@ -14,25 +14,24 @@ import pickle
 
 import bandit_algos
 from nig_normal import *
+import SessionState
 
 def main():
 
-    # Session state for persistent values
-    state = _get_state()
+    session = SessionState.get(initialized = False, submitted = False, first_random = False)
+    
+    if not session.initialized:
+        session.means = np.zeros(512)
+        initialize_thompson_sampling(session)
+        session.initialized = True
 
-    if not state.rewards:
-        state.rewards = []
-
-    if not state.submitted:
-        display_intro_page(state)
+    if not session.submitted:
+        display_intro_page(session)
     else:
-        display_faces_page(state)
-        
-    # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
-    state.sync()
+        display_faces_page(session)
 
-def display_intro_page(state):
 
+def display_intro_page(session):
     #Instructions
     st.title("Thank you for your interest in our app!")
     st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
@@ -40,39 +39,21 @@ def display_intro_page(state):
     
     #Demographics
     st.header('Please fill this out before starting!')
-    state.username = st.text_input('Enter username')
-    state.age = st.number_input('Age', min_value=18, max_value=100)
-    state.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
-    state.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
-    state.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    session.username = st.text_input('Enter username')
+    session.age = st.number_input('Age', min_value=18, max_value=100)
+    session.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
+    session.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    session.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
     
     if st.button('Submit'):
-        add_user_to_database(state)
-        state.means = np.zeros(512)
+        add_user_to_database(session)
 
         # TODO: Check if username is empty also check if the demographic of this user changed 
-        state.submitted = True
+        session.submitted = True
 
-def display_faces_page(state):
+def display_faces_page(session):
     
     st.header('Which face is more aggressive?')
-
-    st.sidebar.slider('age', -1.00, 1.00)
-    st.sidebar.slider('gender', -1.00, 1.00)
-    st.sidebar.slider('smile', -1.00, 1.00)
-    st.sidebar.slider('pitch', -1.00, 1.00)
-    st.sidebar.slider('roll', -1.00, 1.00)
-    st.sidebar.slider('yaw', -1.00, 1.00)
-    st.sidebar.slider('eye-eyebrow distance', -1.00, 1.00)
-    st.sidebar.slider('eye distance', -1.00, 1.00)
-    st.sidebar.slider('eye ratio', -1.00, 1.00)
-    st.sidebar.slider('eyes open', -1.00, 1.00)
-    st.sidebar.slider('nose ratio', -1.00, 1.00)
-    st.sidebar.slider('nose tip', -1.00, 1.00)
-    st.sidebar.slider('nose-mouth distance', -1.00, 1.00)
-    st.sidebar.slider('mouth ratio', -1.00, 1.00)
-    st.sidebar.slider('mouth open', -1.00, 1.00)
-    st.sidebar.slider('lip ratio', -1.00, 1.00)
 
     # Download the model file
     download_file('Gs.pth')
@@ -85,49 +66,47 @@ def display_faces_page(state):
     results = client.results
     basic = results['basic']
 
-    myquery = { "username": state.username }
+    myquery = { "username": session.username }
     user_dict = basic.find_one(myquery)
     
     rewards_list = list(user_dict['rewards'])
     weights_list = list(user_dict['weights'])
     
     # Completely random sampling
-    weights = bandit_algos.random_latents()
+    if not session.first_random:
+        weights = bandit_algos.random_latents()
+        session.first_random = True
     
     # Magnitude shift sampling
     # if database for username is empty, all means are 0
     if len(rewards_list) > 0:
-        weights, state.means = bandit_algos.magnitude_shift(state.means, rewards_list[-1])
+        weights, session.means = bandit_algos.magnitude_shift(session.means, rewards_list[-1])
         weights = np.asarray(weights)
     
-    # Thompson Sampling 
-    state.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]
+    # Thompson Sampling
+    
     x = 0
-
-    #weights = np.asarray([model.draw_expected_value(x) for model in state.models])
 
     # Generate the image
     image_out = generate_image(G, weights)
-
-    #weights = bandit_algos.random_latents()
-    #image_out2 = generate_image(G, weights)
     
     # Output the image
     col1, col2 = st.beta_columns(2)
     st.image(image_out, use_column_width=True)
     #col2.image(image_out2, use_column_width=True)
+
     if col1.button('No'):
         rewards_list.append(0)
         weights_list.append(list(weights))
-        basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
-        basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
+        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
+        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
         
     
     if col2.button('Yes'):
         rewards_list.append(1)
         weights_list.append(list(weights))
-        basic.update_one({'username': state.username}, {'$set':{'rewards': rewards_list}})
-        basic.update_one({'username': state.username}, {'$set':{'weights': weights_list}})
+        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
+        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
         
     if st.button('There is something wrong with this picture!'):
         pass
@@ -145,24 +124,45 @@ def display_faces_page(state):
     basic.update_one({'username': state.username}, {'$set':{'final_dist': final_params}})
     '''
 
+def display_feature_sidebar(session):
+    st.sidebar.slider('age', -1.00, 1.00)
+    st.sidebar.slider('gender', -1.00, 1.00)
+    st.sidebar.slider('smile', -1.00, 1.00)
+    st.sidebar.slider('pitch', -1.00, 1.00)
+    st.sidebar.slider('roll', -1.00, 1.00)
+    st.sidebar.slider('yaw', -1.00, 1.00)
+    st.sidebar.slider('eye-eyebrow distance', -1.00, 1.00)
+    st.sidebar.slider('eye distance', -1.00, 1.00)
+    st.sidebar.slider('eye ratio', -1.00, 1.00)
+    st.sidebar.slider('eyes open', -1.00, 1.00)
+    st.sidebar.slider('nose ratio', -1.00, 1.00)
+    st.sidebar.slider('nose tip', -1.00, 1.00)
+    st.sidebar.slider('nose-mouth distance', -1.00, 1.00)
+    st.sidebar.slider('mouth ratio', -1.00, 1.00)
+    st.sidebar.slider('mouth open', -1.00, 1.00)
+    st.sidebar.slider('lip ratio', -1.00, 1.00)
 
-def add_user_to_database(state): 
+
+def initialize_thompson_sampling(session):
+    session.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]
+
+def add_user_to_database(session): 
     client = get_database_connection()
 
     results = client.results
     basic = results['basic']
 
-    myquery = { "username": state.username }
+    myquery = { "username": session.username }
     user_dict = basic.find(myquery)
     user_dict = list(user_dict)
 
     if not user_dict:
         new_user = {
-            'username': state.username,
-            'age': state.age,
-            'gender': state.gender,
-            'ethnicity': state.ethnicity,
-            'politics': state.politics,
+            'username': session.username,
+            'age': session.age,
+            'gender': session.gender,
+            'ethnicity': session.ethnicity,
+            'politics': session.politics,
             'rewards': [],
             'weights': np.zeros((1,512)).tolist(),
             'final_dist': np.zeros((512,4)).tolist() # mu, sigma, alpha, beta
@@ -217,7 +217,6 @@ def generate_image(G, weights):
         generated, pixel_min=-1, pixel_max=1)
     
     for img in images:
-        #img.save('static/images/seed6600.png')
         return img
 
 @st.cache(allow_output_mutation=True)
@@ -258,74 +257,6 @@ def download_file(file_path):
         if progress_bar is not None:
             progress_bar.empty()
 
-
-class _SessionState:
-    
-    def __init__(self, session, hash_funcs):
-        """Initialize SessionState instance."""
-        self.__dict__["_state"] = {
-            "data": {},
-            "hash": None,
-            "hasher": _CodeHasher(hash_funcs),
-            "is_rerun": False,
-            "session": session,
-        }
-        
-    def __call__(self, **kwargs):
-        """Initialize state data once."""
-        for item, value in kwargs.items():
-            if item not in self._state["data"]:
-                self._state["data"][item] = value
-                
-    def __getitem__(self, item):
-        """Return a saved state value, None if item is undefined."""
-        return self._state["data"].get(item, None)
-        
-    def __getattr__(self, item):
-        """Return a saved state value, None if item is undefined."""
-        return self._state["data"].get(item, None)
-    
-    def __setitem__(self, item, value):
-        """Set state value."""
-        self._state["data"][item] = value
-        
-    def __setattr__(self, item, value):
-        """Set state value."""
-        self._state["data"][item] = value
-    
-    def clear(self):
-        """Clear session state and request a rerun."""
-        self._state["data"].clear()
-        self._state["session"].request_rerun()
-    
-    def sync(self):
-        """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
-        # Ensure to rerun only once to avoid infinite loops
-        # caused by a constantly changing state value at each run.
-        #
-        # Example: state.value += 1
-        if self._state["is_rerun"]:
-            self._state["is_rerun"] = False
-        
-        elif self._state["hash"] is not None:
-            if self._state["hash"] != self._state["hasher"].to_bytes(self._state["data"], None):
-                self._state["is_rerun"] = True
-                self._state["session"].request_rerun()
-        self._state["hash"] = self._state["hasher"].to_bytes(self._state["data"], None)
-
-def _get_session():
-    session_id = get_report_ctx().session_id
-    session_info = Server.get_current()._get_session_info(session_id)
-    if session_info is None:
-        raise RuntimeError("Couldn't get your Streamlit Session object.")
-    
-    return session_info.session
-
-def _get_state(hash_funcs=None):
-    session = _get_session()
-    if not hasattr(session, "_custom_session_state"):
-        session._custom_session_state = _SessionState(session, hash_funcs)
-    return session._custom_session_state
 
 if __name__ == "__main__":
     main()

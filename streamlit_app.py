@@ -2,6 +2,7 @@ import os
 import urllib
 from pathlib import Path
 
+from PIL import Image
 import numpy as np
 import torch
 from operator import itemgetter
@@ -56,7 +57,7 @@ def display_faces_page(state):
     
     client = get_database_connection()
     results = client.results
-    arms = list(results['mortalbandit'])
+    arms = results['arms']
     users = results['users']
     
     # Query mongodb collection for the document with this username, it retusn a dictionary of keys and values
@@ -64,10 +65,9 @@ def display_faces_page(state):
     user_dict = users.find_one(myquery)
     
     samples = []
-    for i in range(0, len(arms)):
-        arm = arms[i]
-        if arm['living'] == True and arm['id'] not in user_dict['images_seen']:
-            sample = (np.random.beta(arm['alpha'], arm['beta']), i)
+    for arm in arms.find():
+        if arm['living'] == True and arm['id'] not in user_dict['images seen']:
+            sample = (np.random.beta(arm['alpha'], arm['beta']), arm['id'])
             samples.append(sample)
     largest = max(samples, key=itemgetter(0))
     samples.remove(largest)
@@ -75,11 +75,15 @@ def display_faces_page(state):
                         
     # image1 = get image from AWS idk how to do that lol - this one is the largest
     # image2 = get image from AWS idk how to do that lol - this one is the second largest
+    image1 = Image.open('C:/Users/allen/Pictures/man.png') #temp
+    image2 = Image.open('C:/Users/allen/Pictures/stonks.png') #temp
     
     # Output the image
     col1, col2 = st.beta_columns(2)
     col1.image(image1, use_column_width=True)
     col2.image(image2, use_column_width=True)
+    col1.text(largest[1]) # temp
+    col2.text(secondlargest[1]) #temp
     
     users.update_one(myquery, { '$push': {'images seen': largest[1] } })
     users.update_one(myquery, { '$push': {'images seen': secondlargest[1] } })

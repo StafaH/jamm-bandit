@@ -50,121 +50,84 @@ def display_intro_page(state):
         add_user_to_database(state)
         state.submitted = True
 
-def display_faces_page(session):
+def display_faces_page(state):
     
     st.header('Which face is more assertive?')
-
-    '''
-    Database Structure
-    client
-        -> results
-            -> basic
-                 
-    '''
+    
     client = get_database_connection()
     results = client.results
-    users = results['mortalbandit']
-
+    arms = results['mortalbandit']
+    users = results['users']
+    
     # Query mongodb collection for the document with this username, it retusn a dictionary of keys and values
-    myquery = { "username": session.username }
+    myquery = { 'username': state.username }
     user_dict = users.find_one(myquery)
     
-    # samples = []
-    # for i in range(0, len(images)):
-    #     image = images[i]
-    #     if image['living'] == True and image['id'] not in user_dict['images_seen']:
-    #         sample = (np.random.beta(image['alpha'], image['beta']), i)
-    #         samples.append(sample)
-    # largest = max(samples, key=itemgetter(0))
-    # samples.remove(largest)
-    # secondlargest = max(samples, key=itemgetter(0))
-
+    samples = []
+    for i in range(0, len(arms)):
+        arm = arms[i]
+        if arm['living'] == True and arm['id'] not in user_dict['images_seen']:
+            sample = (np.random.beta(arm['alpha'], arm['beta']), i)
+            samples.append(sample)
+    largest = max(samples, key=itemgetter(0))
+    samples.remove(largest)
+    secondlargest = max(samples, key=itemgetter(0))
+                        
     # image1 = get image from AWS idk how to do that lol - this one is the largest
     # image2 = get image from AWS idk how to do that lol - this one is the second largest
     
     # Output the image
-    # col1, col2 = st.beta_columns(2)
-    # col1.image(image1, use_column_width=True)
-    # col2.image(image2, use_column_width=True)
-    # users.update_one({'username': session.username}, {'$push':{'images seen'}: largest[1]})
-    # users.update_one({'username': session.username}, {'$push':{'images seen'}: secondlargest[1]})
-        
-    # if col1.button('Left'):
-    #     images.update_one({'id': largest[1]}, {'$inc':{'alpha': 1}})
-    #     images.update_one({'id': largest[1]}, {'$inc':{'n_wins': 1}})
-    #     images.update_one({'id': largest[1]}, {'$push':{'win_usernames': session.username}})
-        
-    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'beta': 1}})
-    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'n_losses': 1}})
-    #     images.update_one({'id': secondlargest[1]}, {'$push':{'loss_usernames': session.username}})      
-        
-    # if col2.button('Right'):
-    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'alpha': 1}})
-    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'n_wins': 1}})
-    #     images.update_one({'id': secondlargest[1]}, {'$push':{'win_usernames': session.username}})
+    col1, col2 = st.beta_columns(2)
+    col1.image(image1, use_column_width=True)
+    col2.image(image2, use_column_width=True)
     
-    #     images.update_one({'id': largest[1]}, {'$inc':{'beta': 1}})
-    #     images.update_one({'id': largest[1]}, {'$inc':{'n_losses': 1}})
-    #     images.update_one({'id': largest[1]}, {'$push':{'win_usernames': session.username}})
-       
-    # query1 = {'id': largest[1]}
-    # query2 = {'id': secondlargest[1]}
-    # image_dict1 = images.find_one(query1)
-    # image_dict2 = images.find_one(query2)
-    # if image_dict1['n_losses'] > 10:
-    #     images.update_one({'id': largest[1]}, {'$set':{'living': False}})
-    # if image_dict2['n_losses'] > 10:
-    #     images.update_one({'id': secondlargest[1]}, {'$set':{'living': False}})
+    users.update_one(myquery, { '$push': {'images seen': largest[1] } })
+    users.update_one(myquery, { '$push': {'images seen': secondlargest[1] } })
+    
+    query1 = { 'id': largest[1] }
+    query2 = { 'id': secondlargest[1] }
+        
+    if col1.button('Left'):
+        arms.update_one(query1, { '$inc' : { 'alpha' : 1 } } )
+        arms.update_one(query1, { '$inc' : { 'n_wins' : 1 } } ) 
+        
+        arms.update_one(query2, { '$inc' : { 'beta' : 1 } } )
+        arms.update_one(query2, { '$inc' : { 'n_losses' : 1 } } )
+        
+    if col2.button('Right'):
+        arms.update_one(query2, { '$inc' : { 'alpha' : 1 } } )
+        arms.update_one(query2, { '$inc' : { 'n_wins' : 1 } } )
+    
+        arms.update_one(query1, { '$inc' : { 'beta' : 1 } } )
+        arms.update_one(query1, { '$inc' : { 'n_losses' : 1 } } )
+     
+    image_dict1 = arms.find_one(query1)
+    image_dict2 = arms.find_one(query2)
+    
+    if image_dict1['n_losses'] > 10:
+        arms.update_one(query1, { '$set' : { 'living' : False } } )
+    if image_dict2['n_losses'] > 10:
+        arms.update_one(query2, { '$set' : { 'living' : False } } )
 
-
-def add_user_to_database(session): 
+def add_user_to_database(state): 
     client = get_database_connection()
     
     results = client.results
-    collection = results['mortalbandit']
-    myquery = { 'username': session.username }
-    user_dict = collection.find(myquery)
+    users = results['users']
+    myquery = { 'username': state.username }
+    user_dict = users.find(myquery)
     user_dict = list(user_dict)
     
     if not user_dict:
         new_user = {
-            'username': session.username,
-            'age': session.age,
-            'gender': session.gender,
-            'ethnicity': session.ethnicity,
-            'politics': session.politics,  
-            'images seen': session.images_seen
+            'username': state.username,
+            'age': state.age,
+            'gender': state.gender,
+            'ethnicity': state.ethnicity,
+            'politics': state.politics,  
+            'images seen': state.images_seen
         }
-        collection.insert_one(new_user)
-
-def pregen_images(n):
-    # Download the model file
-    download_file('Gs.pth')
-    
-    # Load the StyleGAN2 Model
-    G = load_model()
-    G.eval()
-    
-    client = get_database_connection()
-    results = client.results
-    images = results['images']
-    
-    for i in range(0, n):
-        weights = np.random.normal(loc=0, scale=1.0, size=(512,))
-        image = generate_image(G, weights)
-        new_image = {
-            'image': image,
-            'weights': weights,
-            'id': i,
-            'alpha': 1,
-            'beta': 1,
-            'n_wins': 0,
-            'n_losses': 0,
-            'win_usernames': [],
-            'loss_usernames': [],
-            'living': True
-        }
-        images.insert_one(new_image)
+        users.insert_one(new_user)
 
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})

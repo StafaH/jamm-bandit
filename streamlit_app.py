@@ -56,7 +56,7 @@ def display_faces_page(state):
     
     client = get_database_connection()
     results = client.results
-    arms = results['mortalbandit']
+    arms = list(results['mortalbandit'])
     users = results['users']
     
     # Query mongodb collection for the document with this username, it retusn a dictionary of keys and values

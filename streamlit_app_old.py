@@ -1,101 +1,279 @@
 import numpy as np
 import os
-import pickle
-import streamlit as st
-import sys
-import tensorflow as tf
 import urllib
+from pathlib import Path
+from datetime import datetime
+import torch
+import stylegan2
+from stylegan2 import utils
+import streamlit as st
+from streamlit.report_thread import get_report_ctx
+from streamlit.server.server import Server
+from streamlit.hashing import _CodeHasher
+from pymongo import MongoClient
+import pickle
 
-sys.path.append('tl_gan')
-sys.path.append('pg_gan')
-import feature_axis
-import tfutil
-import tfutil_cpu
-
-# This should not be hashed by Streamlit when using st.cache.
-TL_GAN_HASH_FUNCS = {
-    tf.Session : id
-}
+import bandit_algos
+from nig_normal import *
+import SessionState
 
 def main():
-    st.title("Streamlit Face-GAN Demo")
-    """This demo demonstrates  using [Nvidia's Progressive Growing of GANs](https://research.nvidia.com/publication/2017-10_Progressive-Growing-of) and 
-    Shaobo Guan's [Transparent Latent-space GAN method](https://blog.insightdatascience.com/generating-custom-photo-realistic-faces-using-ai-d170b1b59255) 
-    for tuning the output face's characteristics. For more information, check out the tutorial on [Towards Data Science](https://towardsdatascience.com/building-machine-learning-apps-with-streamlit-667cef3ff509)."""
 
-    # Download all data files if they aren't already in the working directory.
-    for filename in EXTERNAL_DEPENDENCIES.keys():
-        download_file(filename)
-
-    # Read in models from the data files.
-    tl_gan_model, feature_names = load_tl_gan_model()
-    session, pg_gan_model = load_pg_gan_model()
-
-    st.sidebar.title('Features')
-    seed = 27834096
-    # If the user doesn't want to select which features to control, these will be used.
-    default_control_features = ['Young','Smiling','Male']
-
-    if st.sidebar.checkbox('Show advanced options'):
-        # Randomly initialize feature values. 
-        features = get_random_features(feature_names, seed)
-
-        # Some features are badly calibrated and biased. Removing them
-        block_list = ['Attractive', 'Big_Lips', 'Big_Nose', 'Pale_Skin']
-        sanitized_features = [feature for feature in features if feature not in block_list]
-        
-        # Let the user pick which features to control with sliders.
-        control_features = st.sidebar.multiselect( 'Control which features?',
-            sorted(sanitized_features), default_control_features)
-    else:
-        features = get_random_features(feature_names, seed)
-        # Don't let the user pick feature values to control.
-        control_features = default_control_features
+    session = SessionState.get(initialized = False, submitted = False, first_random = False)
     
-    # Insert user-controlled values from sliders into the feature vector.
-    for feature in control_features:
-        features[feature] = st.sidebar.slider(feature, 0, 100, 50, 5)
+    if not session.initialized:
+        initialize_thompson_sampling(session)
+        session.initialized = True
+        session.controls = get_control_latent_vectors('stylegan2directions/')
+
+    if not session.submitted:
+        display_intro_page(session)
+    else:
+        display_feature_sidebar(session)
+        display_faces_page(session)
 
 
-    st.sidebar.title('Note')
-    st.sidebar.write(
-        """Playing with the sliders, you _will_ find **biases** that exist in this model.
-        """
-    )
-    st.sidebar.write(
-        """For example, moving the `Smiling` slider can turn a face from masculine to feminine or from lighter skin to darker. 
-        """
-    )
-    st.sidebar.write(
-        """Apps like these that allow you to visually inspect model inputs help you find these biases so you can address them in your model _before_ it's put into production.
-        """
-    )
+def display_intro_page(session):
+    #Instructions
+    st.title("Thank you for your interest in our app!")
+    st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
+    st.title("After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
+    
+    #Demographics
+    st.header('Please fill this out before starting!')
+    session.username = st.text_input('Enter username')
+    session.age = st.number_input('Age', min_value=18, max_value=100)
+    session.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
+    session.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    session.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    
+    if st.button('Submit'):
+        add_user_to_database(session)
 
+        # TODO: Check if username is empty also check if the demographic of this user changed 
+        session.submitted = True
 
-    # Generate a new image from this feature vector (or retrieve it from the cache).
-    with session.as_default():
-        image_out = generate_image(session, pg_gan_model, tl_gan_model,
-                features, feature_names)
+def display_faces_page(session):
+    
+    st.header('Which face is more aggressive?')
 
+    # Download the model file
+    download_file('Gs.pth')
+    
+    # Load the StyleGAN2 Model
+    G = load_model()
+    G.eval()
+    
+    client = get_database_connection()
+    results = client.results
+    basic = results['basic']
+
+    myquery = { "username": session.username }
+    user_dict = basic.find_one(myquery)
+    
+    rewards_list = list(user_dict['rewards'])
+    weights_list = list(user_dict['weights'])
+    final_list = list(user_dict['final_dist'])
+    
+    # Completely random sampling
+    if not session.first_random:
+        weights = bandit_algos.random_latents()
+        session.weights = weights
+        session.first_random = True
+    
+    # Magnitude shift sampling
+    # if database for username is empty, all means are 0
+    # if len(rewards_list) > 0:
+    #     means = []
+    #     for i in range(0, len(final_list)):
+    #         means.append(final_list[i][0])
+    #     weights, means = bandit_algos.magnitude_shift(means, rewards_list[-1])
+    #     weights = np.asarray(weights)
+    
+    
+
+    # Thompson Sampling
+    
+    x = 0
+
+    # Generate the image
+    weights = session.weights
+    weights = weights + (session.age_magnitude * session.controls['age'])
+    weights = weights + (session.gender_magnitude * session.controls['gender'])
+    weights = weights + (session.smile_magnitude * session.controls['smile'])
+    weights = weights + (session.pitch_magnitude * session.controls['pitch'])
+    weights = weights + (session.roll_magnitude * session.controls['roll'])
+    weights = weights + (session.yaw_magnitude * session.controls['yaw'])
+    weights = weights + (session.eyebrow_magnitude * session.controls['eye_eyebrow_distance'])
+    weights = weights + (session.eyedist_magnitude * session.controls['eye_distance'])
+    weights = weights + (session.eyeratio_magnitude * session.controls['eye_ratio'])
+    weights = weights + (session.eyeopen_magnitude * session.controls['eyes_open'])
+    weights = weights + (session.noseratio_magnitude * session.controls['nose_ratio'])
+    weights = weights + (session.nosetip_magnitude * session.controls['nose_tip'])
+    weights = weights + (session.nousemouthdist_magnitude * session.controls['nose_mouth_distance'])
+    weights = weights + (session.mouthratio_magnitude * session.controls['mouth_ratio'])
+    weights = weights + (session.mouthopen_magnitude * session.controls['mouth_open'])
+    weights = weights + (session.lipratio_magnitude * session.controls['lip_ratio'])
+    
+    image_out = generate_image(G, weights)
+    
+    # Output the image
+    col1, col2 = st.beta_columns(2)
     st.image(image_out, use_column_width=True)
+    #col2.image(image_out2, use_column_width=True)
+
+    if col1.button('No'):
+        rewards_list.append(0)
+        weights_list.append(list(weights))
+        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
+        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
+        
+    
+    if col2.button('Yes'):
+        rewards_list.append(1)
+        weights_list.append(list(weights))
+        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
+        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
+        
+    if st.button('There is something wrong with this picture!'):
+        pass
+    
+    st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
+    
+    # final_params = []
+    # for i in range(0, len(means)):
+    #     params = [means[i], 1, 1, 1]
+    #     final_params.append(params)
+    # basic.update_one({'username': session.username}, {'$set':{'final_dist': final_params}})   
+        
+    #params = list(user_dict['final_dist'])
+    #final_params = list(user_dict['final_dist'])
+    '''
+    final_params = []
+    for model in state.models:
+        model.update_posterior(x, rewards_list[-1])
+        params = [model.mu, model.v, model.alpha, model.beta]
+        final_params.append(params)
+    basic.update_one({'username': state.username}, {'$set':{'final_dist': final_params}})
+    '''
+
+def display_feature_sidebar(session):
+    session.age_magnitude = st.sidebar.slider('age', -1000.00, 1000.00, 0.0, 0.1)
+    session.gender_magnitude = st.sidebar.slider('gender', -1000.00, 1000.00, 0.0, 0.1)
+    session.smile_magnitude = st.sidebar.slider('smile', -1000.00, 1000.00, 0.0, 0.1)
+    session.pitch_magnitude = st.sidebar.slider('pitch', -1000.00, 1000.00, 0.0, 0.1)
+    session.roll_magnitude = st.sidebar.slider('roll', -1000.00, 1000.00, 0.0, 0.1)
+    session.yaw_magnitude = st.sidebar.slider('yaw', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyebrow_magnitude = st.sidebar.slider('eye-eyebrow distance', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyedist_magnitude = st.sidebar.slider('eye distance', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyeratio_magnitude = st.sidebar.slider('eye ratio', -1000.00, 1000.00, 0.0, 0.1)
+    session.eyeopen_magnitude = st.sidebar.slider('eyes open', -1000.00, 1000.00, 0.0, 0.1)
+    session.noseratio_magnitude = st.sidebar.slider('nose ratio', -1000.00, 1000.00, 0.0, 0.1)
+    session.nosetip_magnitude = st.sidebar.slider('nose tip', -1000.00, 1000.00, 0.0, 0.1)
+    session.nousemouthdist_magnitude = st.sidebar.slider('nose-mouth distance', -1000.00, 1000.00, 0.0, 0.1)
+    session.mouthratio_magnitude = st.sidebar.slider('mouth ratio', -1000.00, 1000.00, 0.0, 0.1)
+    session.mouthopen_magnitude = st.sidebar.slider('mouth open', -1000.00, 1000.00, 0.0, 0.1)
+    session.lipratio_magnitude = st.sidebar.slider('lip ratio', -1000.00, 1000.00, 0.0, 0.1)
 
 
+def initialize_thompson_sampling(session):
+    session.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]
 
+def add_user_to_database(session): 
+    client = get_database_connection()
+
+    results = client.results
+    basic = results['basic']
+
+    myquery = { "username": session.username }
+    user_dict = basic.find(myquery)
+    user_dict = list(user_dict)
+
+    if not user_dict:
+        new_user = {
+            'username': session.username,
+            'age': session.age,
+            'gender': session.gender,
+            'ethnicity': session.ethnicity,
+            'politics': session.politics,
+            'rewards': [],
+            'weights': np.zeros((1,512)).tolist(),
+            'final_dist': np.zeros((512,4)).tolist() # mu, sigma, alpha, beta
+        }
+        basic.insert_one(new_user)
+    
+
+@st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
+def get_database_connection():
+    return MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")
+
+@st.cache
+def get_control_latent_vectors(path):
+    files = [x for x in Path(path).iterdir() if str(x).endswith('.npy')]
+    latent_vectors = {f.name[:-4]:np.load(f) for f in files}
+    return latent_vectors
+
+@st.cache(show_spinner=False)
+def generate_image(G, weights):
+    latent_size, label_size = G.latent_size, G.label_size
+    device = torch.device('cpu')
+    
+    if device.index is not None:
+        torch.cuda.set_device(device.index)
+        
+    G.to(device)
+    G.set_truncation(0.5)
+    noise_reference = G.static_noise()
+    noise_tensors = [[] for _ in noise_reference]
+    
+    latents = []
+    labels = []
+    rnd = np.random.RandomState(6600)
+    latents.append(torch.from_numpy(weights))
+            
+    for i, ref in enumerate(noise_reference):
+        noise_tensors[i].append(torch.from_numpy(rnd.randn(*ref.size()[1:])))
+        
+    if label_size:
+        labels.append(torch.tensor([rnd.randint(0, label_size)]))
+    
+    latents = torch.stack(latents, dim=0).to(device=device, dtype=torch.float32)
+    
+    if labels:
+        labels = torch.cat(labels, dim=0).to(device=device, dtype=torch.int64)
+    else:
+        labels = None
+    
+    noise_tensors = [torch.stack(noise, dim=0).to(device=device, dtype=torch.float32) for noise in noise_tensors]
+    
+    if noise_tensors is not None:
+        G.static_noise(noise_tensors=noise_tensors)
+    with torch.no_grad():
+        generated = G(latents, labels=labels)
+    
+    images = utils.tensor_to_PIL(
+        generated, pixel_min=-1, pixel_max=1)
+    
+    for img in images:
+        return img
+
+@st.cache(allow_output_mutation=True)
+def load_model():
+    return stylegan2.models.load('Gs.pth')
+    
+@st.cache(suppress_st_warning=True)
 def download_file(file_path):
     # Don't download the file twice. (If possible, verify the download using the file length.)
     if os.path.exists(file_path):
-        if "size" not in EXTERNAL_DEPENDENCIES[file_path]:
-            return
-        elif os.path.getsize(file_path) == EXTERNAL_DEPENDENCIES[file_path]["size"]:
-            return
-
+        return
+    
     # These are handles to two visual elements to animate.
     weights_warning, progress_bar = None, None
     try:
         weights_warning = st.warning("Downloading %s..." % file_path)
         progress_bar = st.progress(0)
         with open(file_path, "wb") as output_file:
-            with urllib.request.urlopen(EXTERNAL_DEPENDENCIES[file_path]["url"]) as response:
+            with urllib.request.urlopen("https://d1p4vo8bv9dco3.cloudfront.net/Gs.pth") as response:
                 length = int(response.info()["Content-Length"])
                 counter = 0.0
                 MEGABYTES = 2.0 ** 20.0
@@ -105,110 +283,18 @@ def download_file(file_path):
                         break
                     counter += len(data)
                     output_file.write(data)
-
                     # We perform animation by overwriting the elements.
                     weights_warning.warning("Downloading %s... (%6.2f/%6.2f MB)" %
                         (file_path, counter / MEGABYTES, length / MEGABYTES))
                     progress_bar.progress(min(counter / length, 1.0))
-
     # Finally, we remove these visual elements by calling .empty().
+    
     finally:
         if weights_warning is not None:
             weights_warning.empty()
         if progress_bar is not None:
             progress_bar.empty()
 
-# Ensure that load_pg_gan_model is called only once, when the app first loads.
-@st.cache(allow_output_mutation=True, hash_funcs=TL_GAN_HASH_FUNCS)
-def load_pg_gan_model():
-    """
-    Create the tensorflow session.
-    """
-    # Open a new TensorFlow session.
-    config = tf.ConfigProto(allow_soft_placement=True)
-    session = tf.Session(config=config)
-
-    # Must have a default TensorFlow session established in order to initialize the GAN.
-    with session.as_default():
-        # Read in either the GPU or the CPU version of the GAN
-        with open(MODEL_FILE_GPU if USE_GPU else MODEL_FILE_CPU, 'rb') as f:
-            G = pickle.load(f)
-    return session, G
-
-# Ensure that load_tl_gan_model is called only once, when the app first loads.
-@st.cache(hash_funcs=TL_GAN_HASH_FUNCS)
-def load_tl_gan_model():
-    """
-    Load the linear model (matrix) which maps the feature space
-    to the GAN's latent space.
-    """
-    with open(FEATURE_DIRECTION_FILE, 'rb') as f:
-        feature_direction_name = pickle.load(f)
-
-    # Pick apart the feature_direction_name data structure.
-    feature_direction = feature_direction_name['direction']
-    feature_names = feature_direction_name['name']
-    num_feature = feature_direction.shape[1]
-    feature_lock_status = np.zeros(num_feature).astype('bool')
-
-    # Rearrange feature directions using Shaobo's library function.
-    feature_direction_disentangled = \
-        feature_axis.disentangle_feature_axis_by_idx(
-            feature_direction,
-            idx_base=np.flatnonzero(feature_lock_status))
-    return feature_direction_disentangled, feature_names
-
-def get_random_features(feature_names, seed):
-    """
-    Return a random dictionary from feature names to feature
-    values within the range [40,60] (out of [0,100]).
-    """
-    np.random.seed(seed)
-    features = dict((name, 40+np.random.randint(0,21)) for name in feature_names)
-    return features
-
-# Hash the TensorFlow session, the pg-GAN model, and the TL-GAN model by id
-# to avoid expensive or illegal computations.
-@st.cache(show_spinner=False, hash_funcs=TL_GAN_HASH_FUNCS)
-def generate_image(session, pg_gan_model, tl_gan_model, features, feature_names):
-    """
-    Converts a feature vector into an image.
-    """
-    # Create rescaled feature vector.
-    feature_values = np.array([features[name] for name in feature_names])
-    feature_values = (feature_values - 50) / 250
-    # Multiply by Shaobo's matrix to get the latent variables.
-    latents = np.dot(tl_gan_model, feature_values)
-    latents = latents.reshape(1, -1)
-    dummies = np.zeros([1] + pg_gan_model.input_shapes[1][1:])
-    # Feed the latent vector to the GAN in TensorFlow.
-    with session.as_default():
-        images = pg_gan_model.run(latents, dummies)
-    # Rescale and reorient the GAN's output to make an image.
-    images = np.clip(np.rint((images + 1.0) / 2.0 * 255.0),
-                              0.0, 255.0).astype(np.uint8)  # [-1,1] => [0,255]
-    if USE_GPU:
-        images = images.transpose(0, 2, 3, 1)  # NCHW => NHWC
-    return images[0]
-
-USE_GPU = False
-FEATURE_DIRECTION_FILE = "feature_direction_2018102_044444.pkl"
-MODEL_FILE_GPU = "karras2018iclr-celebahq-1024x1024-condensed.pkl"
-MODEL_FILE_CPU = "karras2018iclr-celebahq-1024x1024-condensed-cpu.pkl"
-EXTERNAL_DEPENDENCIES = {
-    "feature_direction_2018102_044444.pkl" : {
-        "url": "https://streamlit-demo-data.s3-us-west-2.amazonaws.com/facegan/feature_direction_20181002_044444.pkl",
-        "size": 164742
-    },
-    "karras2018iclr-celebahq-1024x1024-condensed.pkl": {
-        "url": "https://streamlit-demo-data.s3-us-west-2.amazonaws.com/facegan/karras2018iclr-celebahq-1024x1024-condensed.pkl",
-        "size": 92338293
-    },
-    "karras2018iclr-celebahq-1024x1024-condensed-cpu.pkl": {
-        "url": "https://streamlit-demo-data.s3-us-west-2.amazonaws.com/facegan/karras2018iclr-celebahq-1024x1024-condensed-cpu.pkl",
-        "size": 92340233
-    }
-}
 
 if __name__ == "__main__":
     main()

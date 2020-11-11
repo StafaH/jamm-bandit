@@ -1,62 +1,139 @@
-import numpy as np
 import os
 import urllib
 from pathlib import Path
-from datetime import datetime
+
+import numpy as np
 import torch
+from operator import itemgetter
 import stylegan2
 from stylegan2 import utils
-import streamlit as st
-from streamlit.report_thread import get_report_ctx
-from streamlit.server.server import Server
-from streamlit.hashing import _CodeHasher
 from pymongo import MongoClient
-import pickle
+import streamlit as st
 
-import bandit_algos
-from nig_normal import *
 import SessionState
 
 def main():
 
-    session = SessionState.get(initialized = False, submitted = False, first_random = False)
+    session = SessionState.get(initialized = False, submitted = False, first_random = False, images_seen = 0)
     
     if not session.initialized:
-        initialize_thompson_sampling(session)
         session.initialized = True
         session.controls = get_control_latent_vectors('stylegan2directions/')
 
     if not session.submitted:
         display_intro_page(session)
     else:
-        display_feature_sidebar(session)
         display_faces_page(session)
 
 
 def display_intro_page(session):
-    #Instructions
+    # Text Instructions for users
     st.title("Thank you for your interest in our app!")
     st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
     st.title("After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
     
-    #Demographics
+    # Collect Demographic Information
     st.header('Please fill this out before starting!')
     session.username = st.text_input('Enter username')
     session.age = st.number_input('Age', min_value=18, max_value=100)
     session.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
     session.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
     session.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    session.images_seen = []
     
+    # Add user to the database using demographic information (if they do not exist)
     if st.button('Submit'):
         add_user_to_database(session)
-
-        # TODO: Check if username is empty also check if the demographic of this user changed 
         session.submitted = True
 
 def display_faces_page(session):
     
-    st.header('Which face is more aggressive?')
+    st.header('Which face is more assertive?')
 
+    '''
+    Database Structure
+    client
+        -> results
+            -> basic
+                 
+    '''
+    client = get_database_connection()
+    results = client.results
+    users = results['mortalbandit']
+
+    # Query mongodb collection for the document with this username, it retusn a dictionary of keys and values
+    myquery = { "username": session.username }
+    user_dict = users.find_one(myquery)
+    
+    # samples = []
+    # for i in range(0, len(images)):
+    #     image = images[i]
+    #     if image['living'] == True and image['id'] not in user_dict['images_seen']:
+    #         sample = (np.random.beta(image['alpha'], image['beta']), i)
+    #         samples.append(sample)
+    # largest = max(samples, key=itemgetter(0))
+    # samples.remove(largest)
+    # secondlargest = max(samples, key=itemgetter(0))
+
+    # image1 = get image from AWS idk how to do that lol - this one is the largest
+    # image2 = get image from AWS idk how to do that lol - this one is the second largest
+    
+    # Output the image
+    # col1, col2 = st.beta_columns(2)
+    # col1.image(image1, use_column_width=True)
+    # col2.image(image2, use_column_width=True)
+    # users.update_one({'username': session.username}, {'$push':{'images seen'}: largest[1]})
+    # users.update_one({'username': session.username}, {'$push':{'images seen'}: secondlargest[1]})
+        
+    # if col1.button('Left'):
+    #     images.update_one({'id': largest[1]}, {'$inc':{'alpha': 1}})
+    #     images.update_one({'id': largest[1]}, {'$inc':{'n_wins': 1}})
+    #     images.update_one({'id': largest[1]}, {'$push':{'win_usernames': session.username}})
+        
+    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'beta': 1}})
+    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'n_losses': 1}})
+    #     images.update_one({'id': secondlargest[1]}, {'$push':{'loss_usernames': session.username}})      
+        
+    # if col2.button('Right'):
+    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'alpha': 1}})
+    #     images.update_one({'id': secondlargest[1]}, {'$inc':{'n_wins': 1}})
+    #     images.update_one({'id': secondlargest[1]}, {'$push':{'win_usernames': session.username}})
+    
+    #     images.update_one({'id': largest[1]}, {'$inc':{'beta': 1}})
+    #     images.update_one({'id': largest[1]}, {'$inc':{'n_losses': 1}})
+    #     images.update_one({'id': largest[1]}, {'$push':{'win_usernames': session.username}})
+       
+    # query1 = {'id': largest[1]}
+    # query2 = {'id': secondlargest[1]}
+    # image_dict1 = images.find_one(query1)
+    # image_dict2 = images.find_one(query2)
+    # if image_dict1['n_losses'] > 10:
+    #     images.update_one({'id': largest[1]}, {'$set':{'living': False}})
+    # if image_dict2['n_losses'] > 10:
+    #     images.update_one({'id': secondlargest[1]}, {'$set':{'living': False}})
+
+
+def add_user_to_database(session): 
+    client = get_database_connection()
+    
+    results = client.results
+    collection = results['mortalbandit']
+    myquery = { 'username': session.username }
+    user_dict = collection.find(myquery)
+    user_dict = list(user_dict)
+    
+    if not user_dict:
+        new_user = {
+            'username': session.username,
+            'age': session.age,
+            'gender': session.gender,
+            'ethnicity': session.ethnicity,
+            'politics': session.politics,  
+            'images seen': session.images_seen
+        }
+        collection.insert_one(new_user)
+
+def pregen_images(n):
     # Download the model file
     download_file('Gs.pth')
     
@@ -66,142 +143,25 @@ def display_faces_page(session):
     
     client = get_database_connection()
     results = client.results
-    basic = results['basic']
-
-    myquery = { "username": session.username }
-    user_dict = basic.find_one(myquery)
+    images = results['images']
     
-    rewards_list = list(user_dict['rewards'])
-    weights_list = list(user_dict['weights'])
-    final_list = list(user_dict['final_dist'])
-    
-    # Completely random sampling
-    if not session.first_random:
-        weights = bandit_algos.random_latents()
-        session.weights = weights
-        session.first_random = True
-    
-    # Magnitude shift sampling
-    # if database for username is empty, all means are 0
-    # if len(rewards_list) > 0:
-    #     means = []
-    #     for i in range(0, len(final_list)):
-    #         means.append(final_list[i][0])
-    #     weights, means = bandit_algos.magnitude_shift(means, rewards_list[-1])
-    #     weights = np.asarray(weights)
-    
-    
-
-    # Thompson Sampling
-    
-    x = 0
-
-    # Generate the image
-    weights = session.weights
-    weights = weights + (session.age_magnitude * session.controls['age'])
-    weights = weights + (session.gender_magnitude * session.controls['gender'])
-    weights = weights + (session.smile_magnitude * session.controls['smile'])
-    weights = weights + (session.pitch_magnitude * session.controls['pitch'])
-    weights = weights + (session.roll_magnitude * session.controls['roll'])
-    weights = weights + (session.yaw_magnitude * session.controls['yaw'])
-    weights = weights + (session.eyebrow_magnitude * session.controls['eye_eyebrow_distance'])
-    weights = weights + (session.eyedist_magnitude * session.controls['eye_distance'])
-    weights = weights + (session.eyeratio_magnitude * session.controls['eye_ratio'])
-    weights = weights + (session.eyeopen_magnitude * session.controls['eyes_open'])
-    weights = weights + (session.noseratio_magnitude * session.controls['nose_ratio'])
-    weights = weights + (session.nosetip_magnitude * session.controls['nose_tip'])
-    weights = weights + (session.nousemouthdist_magnitude * session.controls['nose_mouth_distance'])
-    weights = weights + (session.mouthratio_magnitude * session.controls['mouth_ratio'])
-    weights = weights + (session.mouthopen_magnitude * session.controls['mouth_open'])
-    weights = weights + (session.lipratio_magnitude * session.controls['lip_ratio'])
-    
-    image_out = generate_image(G, weights)
-    
-    # Output the image
-    col1, col2 = st.beta_columns(2)
-    st.image(image_out, use_column_width=True)
-    #col2.image(image_out2, use_column_width=True)
-
-    if col1.button('No'):
-        rewards_list.append(0)
-        weights_list.append(list(weights))
-        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
-        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
-        
-    
-    if col2.button('Yes'):
-        rewards_list.append(1)
-        weights_list.append(list(weights))
-        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
-        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
-        
-    if st.button('There is something wrong with this picture!'):
-        pass
-    
-    st.markdown(f'Faces Viewed = {len(rewards_list)} times.')
-    
-    # final_params = []
-    # for i in range(0, len(means)):
-    #     params = [means[i], 1, 1, 1]
-    #     final_params.append(params)
-    # basic.update_one({'username': session.username}, {'$set':{'final_dist': final_params}})   
-        
-    #params = list(user_dict['final_dist'])
-    #final_params = list(user_dict['final_dist'])
-    '''
-    final_params = []
-    for model in state.models:
-        model.update_posterior(x, rewards_list[-1])
-        params = [model.mu, model.v, model.alpha, model.beta]
-        final_params.append(params)
-    basic.update_one({'username': state.username}, {'$set':{'final_dist': final_params}})
-    '''
-
-def display_feature_sidebar(session):
-    session.age_magnitude = st.sidebar.slider('age', -1000.00, 1000.00, 0.0, 0.1)
-    session.gender_magnitude = st.sidebar.slider('gender', -1000.00, 1000.00, 0.0, 0.1)
-    session.smile_magnitude = st.sidebar.slider('smile', -1000.00, 1000.00, 0.0, 0.1)
-    session.pitch_magnitude = st.sidebar.slider('pitch', -1000.00, 1000.00, 0.0, 0.1)
-    session.roll_magnitude = st.sidebar.slider('roll', -1000.00, 1000.00, 0.0, 0.1)
-    session.yaw_magnitude = st.sidebar.slider('yaw', -1000.00, 1000.00, 0.0, 0.1)
-    session.eyebrow_magnitude = st.sidebar.slider('eye-eyebrow distance', -1000.00, 1000.00, 0.0, 0.1)
-    session.eyedist_magnitude = st.sidebar.slider('eye distance', -1000.00, 1000.00, 0.0, 0.1)
-    session.eyeratio_magnitude = st.sidebar.slider('eye ratio', -1000.00, 1000.00, 0.0, 0.1)
-    session.eyeopen_magnitude = st.sidebar.slider('eyes open', -1000.00, 1000.00, 0.0, 0.1)
-    session.noseratio_magnitude = st.sidebar.slider('nose ratio', -1000.00, 1000.00, 0.0, 0.1)
-    session.nosetip_magnitude = st.sidebar.slider('nose tip', -1000.00, 1000.00, 0.0, 0.1)
-    session.nousemouthdist_magnitude = st.sidebar.slider('nose-mouth distance', -1000.00, 1000.00, 0.0, 0.1)
-    session.mouthratio_magnitude = st.sidebar.slider('mouth ratio', -1000.00, 1000.00, 0.0, 0.1)
-    session.mouthopen_magnitude = st.sidebar.slider('mouth open', -1000.00, 1000.00, 0.0, 0.1)
-    session.lipratio_magnitude = st.sidebar.slider('lip ratio', -1000.00, 1000.00, 0.0, 0.1)
-
-
-def initialize_thompson_sampling(session):
-    session.models = [NIGNormal(mu=0, v=1, alpha=1, beta=1) for latent in range(512)]
-
-def add_user_to_database(session): 
-    client = get_database_connection()
-
-    results = client.results
-    basic = results['basic']
-
-    myquery = { "username": session.username }
-    user_dict = basic.find(myquery)
-    user_dict = list(user_dict)
-
-    if not user_dict:
-        new_user = {
-            'username': session.username,
-            'age': session.age,
-            'gender': session.gender,
-            'ethnicity': session.ethnicity,
-            'politics': session.politics,
-            'rewards': [],
-            'weights': np.zeros((1,512)).tolist(),
-            'final_dist': np.zeros((512,4)).tolist() # mu, sigma, alpha, beta
+    for i in range(0, n):
+        weights = np.random.normal(loc=0, scale=1.0, size=(512,))
+        image = generate_image(G, weights)
+        new_image = {
+            'image': image,
+            'weights': weights,
+            'id': i,
+            'alpha': 1,
+            'beta': 1,
+            'n_wins': 0,
+            'n_losses': 0,
+            'win_usernames': [],
+            'loss_usernames': [],
+            'living': True
         }
-        basic.insert_one(new_user)
-    
+        images.insert_one(new_image)
+
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():

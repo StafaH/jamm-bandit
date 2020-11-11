@@ -8,25 +8,29 @@ from operator import itemgetter
 import stylegan2
 from stylegan2 import utils
 from pymongo import MongoClient
-import streamlit as st
 
-import SessionState
+import streamlit as st
+from streamlit.hashing import _CodeHasher
+from streamlit.report_thread import get_report_ctx
+from streamlit.server.server import Server
 
 def main():
 
-    session = SessionState.get(initialized = False, submitted = False, first_random = False, images_seen = 0)
+    state = _get_state()
     
-    if not session.initialized:
-        session.initialized = True
-        session.controls = get_control_latent_vectors('stylegan2directions/')
+    if not state.initialized:
+        state.initialized = True
+        state.controls = get_control_latent_vectors('stylegan2directions/')
 
-    if not session.submitted:
-        display_intro_page(session)
+    if not state.submitted:
+        display_intro_page(state)
     else:
-        display_faces_page(session)
+        display_faces_page(state)
+
+    state.sync()
 
 
-def display_intro_page(session):
+def display_intro_page(state):
     # Text Instructions for users
     st.title("Thank you for your interest in our app!")
     st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
@@ -34,17 +38,17 @@ def display_intro_page(session):
     
     # Collect Demographic Information
     st.header('Please fill this out before starting!')
-    session.username = st.text_input('Enter username')
-    session.age = st.number_input('Age', min_value=18, max_value=100)
-    session.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
-    session.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
-    session.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
-    session.images_seen = []
+    state.username = st.text_input('Enter username')
+    state.age = st.number_input('Age', min_value=18, max_value=100)
+    state.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
+    state.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    state.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    state.images_seen = []
     
     # Add user to the database using demographic information (if they do not exist)
     if st.button('Submit'):
-        add_user_to_database(session)
-        session.submitted = True
+        add_user_to_database(state)
+        state.submitted = True
 
 def display_faces_page(session):
     
@@ -255,6 +259,81 @@ def download_file(file_path):
         if progress_bar is not None:
             progress_bar.empty()
 
+
+class _SessionState:
+
+    def __init__(self, session, hash_funcs):
+        """Initialize SessionState instance."""
+        self.__dict__["_state"] = {
+            "data": {},
+            "hash": None,
+            "hasher": _CodeHasher(hash_funcs),
+            "is_rerun": False,
+            "session": session,
+        }
+
+    def __call__(self, **kwargs):
+        """Initialize state data once."""
+        for item, value in kwargs.items():
+            if item not in self._state["data"]:
+                self._state["data"][item] = value
+
+    def __getitem__(self, item):
+        """Return a saved state value, None if item is undefined."""
+        return self._state["data"].get(item, None)
+        
+    def __getattr__(self, item):
+        """Return a saved state value, None if item is undefined."""
+        return self._state["data"].get(item, None)
+
+    def __setitem__(self, item, value):
+        """Set state value."""
+        self._state["data"][item] = value
+
+    def __setattr__(self, item, value):
+        """Set state value."""
+        self._state["data"][item] = value
+    
+    def clear(self):
+        """Clear session state and request a rerun."""
+        self._state["data"].clear()
+        self._state["session"].request_rerun()
+    
+    def sync(self):
+        """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
+
+        # Ensure to rerun only once to avoid infinite loops
+        # caused by a constantly changing state value at each run.
+        #
+        # Example: state.value += 1
+        if self._state["is_rerun"]:
+            self._state["is_rerun"] = False
+        
+        elif self._state["hash"] is not None:
+            if self._state["hash"] != self._state["hasher"].to_bytes(self._state["data"], None):
+                self._state["is_rerun"] = True
+                self._state["session"].request_rerun()
+
+        self._state["hash"] = self._state["hasher"].to_bytes(self._state["data"], None)
+
+
+def _get_session():
+    session_id = get_report_ctx().session_id
+    session_info = Server.get_current()._get_session_info(session_id)
+
+    if session_info is None:
+        raise RuntimeError("Couldn't get your Streamlit Session object.")
+    
+    return session_info.session
+
+
+def _get_state(hash_funcs=None):
+    session = _get_session()
+
+    if not hasattr(session, "_custom_session_state"):
+        session._custom_session_state = _SessionState(session, hash_funcs)
+
+    return session._custom_session_state
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ import urllib
 from pathlib import Path
 from datetime import datetime
 import torch
+from operator import itemgetter
 import stylegan2
 from stylegan2 import utils
 import streamlit as st
@@ -64,37 +65,52 @@ def display_faces_page(session):
     myquery = { "username": session.username }
     user_dict = users.find_one(myquery)
     
-    
-    rewards_list = list(user_dict['rewards'])
-    weights_list = list(user_dict['weights'])
-    
-    # Completely random sampling
-    if not session.first_random:
-        weights = bandit_algos.random_latents()
-        session.weights = weights
-        session.first_random = True
+    samples = []
+    for i in range(0, len(images)):
+        image = images[i]
+        if image['living'] == True and image['id'] not in user_dict['images_seen']:
+            sample = (np.random.beta(image['alpha'], image['beta']), i)
+            samples.append(sample)
+    largest = max(samples, key=itemgetter(0))
+    samples.remove(largest)
+    secondlargest = max(samples, key=itemgetter(0))
+
+    # image1 = get image from AWS idk how to do that lol - this one is the largest
+    # image2 = get image from AWS idk how to do that lol - this one is the second largest
     
     # Output the image
     col1, col2 = st.beta_columns(2)
-    col1.image(image_out, use_column_width=True)
-    col2.image(image_out2, use_column_width=True)
-
+    col1.image(image1, use_column_width=True)
+    col2.image(image2, use_column_width=True)
+    users.update_one({'username': session.username}, {'$push':{'images seen'}: largest[1]})
+    users.update_one({'username': session.username}, {'$push':{'images seen'}: secondlargest[1]})
+        
     if col1.button('Left'):
-        rewards_list.append(0)
-        weights_list.append(list(weights))
-        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
-        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
+        images.update_one({'id': largest[1]}, {'$inc':{'alpha': 1}})
+        images.update_one({'id': largest[1]}, {'$inc':{'n_wins': 1}})
+        images.update_one({'id': largest[1]}, {'$push':{'win_usernames': session.username}})
         
-    
+        images.update_one({'id': secondlargest[1]}, {'$inc':{'beta': 1}})
+        images.update_one({'id': secondlargest[1]}, {'$inc':{'n_losses': 1}})
+        images.update_one({'id': secondlargest[1]}, {'$push':{'loss_usernames': session.username}})      
+        
     if col2.button('Right'):
-        rewards_list.append(1)
-        weights_list.append(list(weights))
-        basic.update_one({'username': session.username}, {'$set':{'rewards': rewards_list}})
-        basic.update_one({'username': session.username}, {'$set':{'weights': weights_list}})
-        
-    if st.button('There is something wrong with this picture!'):
-        pass
-        
+        images.update_one({'id': secondlargest[1]}, {'$inc':{'alpha': 1}})
+        images.update_one({'id': secondlargest[1]}, {'$inc':{'n_wins': 1}})
+        images.update_one({'id': secondlargest[1]}, {'$push':{'win_usernames': session.username}})
+    
+        images.update_one({'id': largest[1]}, {'$inc':{'beta': 1}})
+        images.update_one({'id': largest[1]}, {'$inc':{'n_losses': 1}})
+        images.update_one({'id': largest[1]}, {'$push':{'win_usernames': session.username}})
+       
+    query1 = {'id': largest[1]}
+    query2 = {'id': secondlargest[1]}
+    image_dict1 = images.find_one(query1)
+    image_dict2 = images.find_one(query2)
+    if image_dict1['n_losses'] > 10:
+        images.update_one({'id': largest[1]}, {'$set':{'living': False}})
+    if image_dict2['n_losses'] > 10:
+        images.update_one({'id': secondlargest[1]}, {'$set':{'living': False}})
 
 def add_user_to_database(session): 
     client = get_database_connection()

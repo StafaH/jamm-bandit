@@ -50,7 +50,7 @@ def display_intro_page(state):
     state.gender = 'N/A'
     state.ethnicity = 'N/A'
     state.politics = 'N/A'
-    # state.images_seen = []
+    state.images_seen = []
     
     # Add user to the database using demographic information (if they do not exist)
     if st.button('Submit'):

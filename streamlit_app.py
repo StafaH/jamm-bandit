@@ -21,14 +21,19 @@ def main():
 
     state = _get_state()
     
+    if not state.page:
+        state.page = 0
+    
     if not state.initialized:
         state.initialized = True
         state.controls = get_control_latent_vectors('stylegan2directions/')
 
-    if not state.submitted:
+    if state.page == 0:
         display_intro_page(state)
-    else:
+    elif state.page == 1:
         display_faces_page(state)
+    elif state.page == 2:
+        display_exit_page(state)
 
     state.sync()
 
@@ -36,38 +41,51 @@ def main():
 def display_intro_page(state):
     # Text Instructions for users
     st.title("Thank you for your interest in our app!")
-    st.title("Before you get a chance to play on our app, you will first be asked to fill out some demographic questions.")
-    st.title("After answering these questions you will be shown different faces. Please select the face that answers the question best by pressing the appropriate buttons.")
+    st.title("You will be shown two different faces at a time. Please select the face that answers the question best by pressing the appropriate buttons.")
     
     # Collect Demographic Information
-    st.header('Please fill this out before starting!')
+    st.header('Please enter a username before starting!')
     state.username = st.text_input('Enter username')
-    state.age = st.number_input('Age', min_value=18, max_value=100)
-    state.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
-    state.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
-    state.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
-    state.images_seen = []
+    state.age = 'N/A'
+    state.gender = 'N/A'
+    state.ethnicity = 'N/A'
+    state.politics = 'N/A'
+    # state.images_seen = []
     
     # Add user to the database using demographic information (if they do not exist)
     if st.button('Submit'):
         add_user_to_database(state)
-        state.submitted = True
+        state.page = 1
 
+def display_exit_page(state):
+    st.title("Thank you for participating!")
+    st.title("Before you leave, please fill out the following demographic questions.")
+    state.age = st.number_input('Age', min_value=18, max_value=100)
+    state.gender = st.selectbox('Gender', ('Male', 'Female', 'Other'))
+    state.ethnicity = st.selectbox('Ethnicity', ('White', 'Hispanic', 'Black', 'Middle Eastern', 'South Asian', 'South-East Asian', 'East Asian', 'Pacific Islander', 'Native American/Indigenous'))
+    state.politics = st.selectbox('Political Orientation', ('Very Liberal', 'Moderately Liberal', 'Slightly Liberal', 'Neither Liberal or Conservative', 'Very Conservative', 'Moderately Conservative', 'Slightly Conservative'))
+    if st.button('Submit'):
+        st.text('Thank you for submitting!')
+        update_user_db(state)
+    if st.button('Go back'):
+        state.page = 1
+    
 def display_faces_page(state):
     
-    st.header('Which face is more assertive?')
+    st.header('Which face is more dominant?')
     
     client = get_database_connection()
     results = client.results
     arms = results['arms']
     users = results['users']
     
-    # Query mongodb collection for the document with this username, it retusn a dictionary of keys and values
+    # Query mongodb collection for the document with this username, it returns a dictionary of keys and values
     myquery = { 'username': state.username }
     user_dict = users.find_one(myquery)
     
-    #seen = len(list(user_dict['images seen']))
-    #if seen < 400:
+    # seen = len(list(user_dict['images seen']))
+    # if seen < 400:
+    
     samples = []
     for arm in arms.find():
         if arm['living'] == True: # and arm['id'] not in user_dict['images seen']:
@@ -77,6 +95,9 @@ def display_faces_page(state):
     largest = max(samples, key=itemgetter(0))
     samples.remove(largest)
     secondlargest = max(samples, key=itemgetter(0))
+    
+    users.update_one(myquery, { '$push': {'images seen': largest[1] } })
+    users.update_one(myquery, { '$push': {'images seen': secondlargest[1] } })
     
     if np.random.randint(1, 10) > 5:
         temp = largest
@@ -101,9 +122,6 @@ def display_faces_page(state):
     col2.image(image2, use_column_width=True)
     #col1.text(largest[1])
     #col2.text(secondlargest[1])
-    
-    users.update_one(myquery, { '$push': {'images seen': largest[1] } })
-    users.update_one(myquery, { '$push': {'images seen': secondlargest[1] } })
         
     if col1.button('Left'):
         arms.update_one(query1, { '$inc' : { 'alpha' : 1 } } )
@@ -127,6 +145,9 @@ def display_faces_page(state):
     if image_dict2['n_losses'] > 10:
         arms.update_one(query2, { '$set' : { 'living' : False } } )
     
+    st.text("")
+    if st.button("Finish"):
+        state.page = 2
     #else:
     #    st.title("You've reached the end! Thank you for participating :)")
 
@@ -150,6 +171,17 @@ def add_user_to_database(state):
         }
         users.insert_one(new_user)
 
+def update_user_db(state):
+    client = get_database_connection()
+    
+    results = client.results
+    users = results['users']
+    myquery = { 'username': state.username }
+    users.update_one(myquery, { '$set' : { 'age' : state.age } } )
+    users.update_one(myquery, { '$set' : { 'gender' : state.gender } } )    
+    users.update_one(myquery, { '$set' : { 'ethnicity' : state.ethnicity } } )    
+    users.update_one(myquery, { '$set' : { 'politics' : state.politics } } )    
+    
 
 @st.cache(allow_output_mutation=True, hash_funcs={MongoClient: id})
 def get_database_connection():

@@ -36,8 +36,8 @@ def main():
 def display_intro_page(state):
     # Text Instructions for users
     st.title("Thank you for your interest in our app!")
-    st.title("Before you get a chance to look at the different faces, you will first be asked to fill out some demographic questions.")
-    st.title("After answering the demographic question you will then be able to look at different faces. Please select the face that appears to be more aggressive to you by pressing either the X or Y button.")
+    st.title("Before you get a chance to play on our app, you will first be asked to fill out some demographic questions.")
+    st.title("After answering these questions you will be shown different faces. Please select the face that answers the question best by pressing the appropriate buttons.")
     
     # Collect Demographic Information
     st.header('Please fill this out before starting!')

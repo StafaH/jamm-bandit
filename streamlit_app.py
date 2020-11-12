@@ -66,69 +66,69 @@ def display_faces_page(state):
     myquery = { 'username': state.username }
     user_dict = users.find_one(myquery)
     
-    seen = len(list(user_dict['images seen']))
-    if seen < 400:
-        samples = []
-        for arm in arms.find():
-            if arm['living'] == True and arm['id'] not in user_dict['images seen']:
-                sample = (np.random.beta(arm['alpha'], arm['beta']), arm['id'])
-                samples.append(sample)
-        
-        largest = max(samples, key=itemgetter(0))
-        samples.remove(largest)
-        secondlargest = max(samples, key=itemgetter(0))
-        
-        if np.random.randint(1, 10) > 5:
-            temp = largest
-            largest = secondlargest
-            secondlargest = temp
-        
-        query1 = { 'id': largest[1] }
-        query2 = { 'id': secondlargest[1] }
-        
-        seed1 = arms.find_one(query1)['seed']
-        seed2 = arms.find_one(query2)['seed']
-        
-        response1 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed1))
-        response2 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed2))
+    #seen = len(list(user_dict['images seen']))
+    #if seen < 400:
+    samples = []
+    for arm in arms.find():
+        if arm['living'] == True: # and arm['id'] not in user_dict['images seen']:
+            sample = (np.random.beta(arm['alpha'], arm['beta']), arm['id'])
+            samples.append(sample)
     
-        image1 = Image.open(BytesIO(response1.content))
-        image2 = Image.open(BytesIO(response2.content))
-        
-        # Output the image
-        col1, col2 = st.beta_columns(2)
-        col1.image(image1, use_column_width=True)
-        col2.image(image2, use_column_width=True)
-        #col1.text(largest[1])
-        #col2.text(secondlargest[1])
-        
-        users.update_one(myquery, { '$push': {'images seen': largest[1] } })
-        users.update_one(myquery, { '$push': {'images seen': secondlargest[1] } })
-            
-        if col1.button('Left'):
-            arms.update_one(query1, { '$inc' : { 'alpha' : 1 } } )
-            arms.update_one(query1, { '$inc' : { 'n_wins' : 1 } } ) 
-            
-            arms.update_one(query2, { '$inc' : { 'beta' : 1 } } )
-            arms.update_one(query2, { '$inc' : { 'n_losses' : 1 } } )
-            
-        if col2.button('Right'):
-            arms.update_one(query2, { '$inc' : { 'alpha' : 1 } } )
-            arms.update_one(query2, { '$inc' : { 'n_wins' : 1 } } )
-        
-            arms.update_one(query1, { '$inc' : { 'beta' : 1 } } )
-            arms.update_one(query1, { '$inc' : { 'n_losses' : 1 } } )
-         
-        image_dict1 = arms.find_one(query1)
-        image_dict2 = arms.find_one(query2)
-        
-        if image_dict1['n_losses'] > 10:
-            arms.update_one(query1, { '$set' : { 'living' : False } } )
-        if image_dict2['n_losses'] > 10:
-            arms.update_one(query2, { '$set' : { 'living' : False } } )
+    largest = max(samples, key=itemgetter(0))
+    samples.remove(largest)
+    secondlargest = max(samples, key=itemgetter(0))
     
-    else:
-        st.title("You've reached the end! Thank you for participating :)")
+    if np.random.randint(1, 10) > 5:
+        temp = largest
+        largest = secondlargest
+        secondlargest = temp
+    
+    query1 = { 'id': largest[1] }
+    query2 = { 'id': secondlargest[1] }
+    
+    seed1 = arms.find_one(query1)['seed']
+    seed2 = arms.find_one(query2)['seed']
+    
+    response1 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed1))
+    response2 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed2))
+
+    image1 = Image.open(BytesIO(response1.content))
+    image2 = Image.open(BytesIO(response2.content))
+    
+    # Output the image
+    col1, col2 = st.beta_columns(2)
+    col1.image(image1, use_column_width=True)
+    col2.image(image2, use_column_width=True)
+    #col1.text(largest[1])
+    #col2.text(secondlargest[1])
+    
+    users.update_one(myquery, { '$push': {'images seen': largest[1] } })
+    users.update_one(myquery, { '$push': {'images seen': secondlargest[1] } })
+        
+    if col1.button('Left'):
+        arms.update_one(query1, { '$inc' : { 'alpha' : 1 } } )
+        arms.update_one(query1, { '$inc' : { 'n_wins' : 1 } } ) 
+        
+        arms.update_one(query2, { '$inc' : { 'beta' : 1 } } )
+        arms.update_one(query2, { '$inc' : { 'n_losses' : 1 } } )
+        
+    if col2.button('Right'):
+        arms.update_one(query2, { '$inc' : { 'alpha' : 1 } } )
+        arms.update_one(query2, { '$inc' : { 'n_wins' : 1 } } )
+    
+        arms.update_one(query1, { '$inc' : { 'beta' : 1 } } )
+        arms.update_one(query1, { '$inc' : { 'n_losses' : 1 } } )
+     
+    image_dict1 = arms.find_one(query1)
+    image_dict2 = arms.find_one(query2)
+    
+    if image_dict1['n_losses'] > 10:
+        arms.update_one(query1, { '$set' : { 'living' : False } } )
+    if image_dict2['n_losses'] > 10:
+        arms.update_one(query2, { '$set' : { 'living' : False } } )
+    
+    #else:
+    #    st.title("You've reached the end! Thank you for participating :)")
 
 def add_user_to_database(state): 
     client = get_database_connection()

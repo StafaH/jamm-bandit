@@ -3,6 +3,8 @@ import urllib
 from pathlib import Path
 
 from PIL import Image
+import requests
+from io import BytesIO
 import numpy as np
 import torch
 from operator import itemgetter
@@ -69,27 +71,37 @@ def display_faces_page(state):
         if arm['living'] == True and arm['id'] not in user_dict['images seen']:
             sample = (np.random.beta(arm['alpha'], arm['beta']), arm['id'])
             samples.append(sample)
+    
     largest = max(samples, key=itemgetter(0))
     samples.remove(largest)
     secondlargest = max(samples, key=itemgetter(0))
-                        
-    # image1 = get image from AWS idk how to do that lol - this one is the largest
-    # image2 = get image from AWS idk how to do that lol - this one is the second largest
-    image1 = Image.open('C:/Users/allen/Pictures/man.png') #temp
-    image2 = Image.open('C:/Users/allen/Pictures/stonks.png') #temp
+    
+    if np.random.randint(1, 10) > 5:
+        temp = largest
+        largest = secondlargest
+        secondlargest = temp
+    
+    query1 = { 'id': largest[1] }
+    query2 = { 'id': secondlargest[1] }
+    
+    seed1 = arms.find_one(query1)['seed']
+    seed2 = arms.find_one(query2)['seed']
+    
+    response1 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed1))
+    response2 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed2))
+
+    image1 = Image.open(BytesIO(response1.content))
+    image2 = Image.open(BytesIO(response2.content))
     
     # Output the image
     col1, col2 = st.beta_columns(2)
     col1.image(image1, use_column_width=True)
     col2.image(image2, use_column_width=True)
-    col1.text(largest[1]) # temp
-    col2.text(secondlargest[1]) #temp
+    #col1.text(largest[1])
+    #col2.text(secondlargest[1])
     
     users.update_one(myquery, { '$push': {'images seen': largest[1] } })
     users.update_one(myquery, { '$push': {'images seen': secondlargest[1] } })
-    
-    query1 = { 'id': largest[1] }
-    query2 = { 'id': secondlargest[1] }
         
     if col1.button('Left'):
         arms.update_one(query1, { '$inc' : { 'alpha' : 1 } } )
@@ -193,7 +205,7 @@ def load_model():
     return stylegan2.models.load('Gs.pth')
     
 @st.cache(suppress_st_warning=True)
-def download_file(file_path):
+def download_file(file_path, url):
     # Don't download the file twice. (If possible, verify the download using the file length.)
     if os.path.exists(file_path):
         return
@@ -204,7 +216,7 @@ def download_file(file_path):
         weights_warning = st.warning("Downloading %s..." % file_path)
         progress_bar = st.progress(0)
         with open(file_path, "wb") as output_file:
-            with urllib.request.urlopen("https://d1p4vo8bv9dco3.cloudfront.net/Gs.pth") as response:
+            with urllib.request.urlopen(url) as response:
                 length = int(response.info()["Content-Length"])
                 counter = 0.0
                 MEGABYTES = 2.0 ** 20.0

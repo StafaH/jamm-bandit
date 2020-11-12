@@ -44,13 +44,15 @@ def display_intro_page(state):
     st.title("You will be shown two different faces at a time. Please select the face that answers the question best by pressing the appropriate buttons.")
     
     # Collect Demographic Information
-    st.header('Please enter a username before starting!')
+    st.header('Please enter a username and the type of experiment before starting!')
     state.username = st.text_input('Enter username')
     state.age = 'N/A'
     state.gender = 'N/A'
     state.ethnicity = 'N/A'
     state.politics = 'N/A'
     state.images_seen = []
+    
+    state.experiment = st.selectbox('Experiment', ('Random', 'Thompson Sampling', 'Mortal Thompson Sampling'))
     
     # Add user to the database using demographic information (if they do not exist)
     if st.button('Submit'):
@@ -75,7 +77,12 @@ def display_faces_page(state):
     st.header('Which face is more dominant?')
     
     client = get_database_connection()
-    results = client.results
+    if state.experiment == "Random":
+        results = client.resultsRandom
+    elif state.experiment == "Thompson Sampling":
+        results = client.resultsTS
+    elif state.experiment == "Mortal Thompson Sampling":
+        results = client.resultsMortalTS
     arms = results['arms']
     users = results['users']
     
@@ -107,8 +114,8 @@ def display_faces_page(state):
     query1 = { 'id': largest[1] }
     query2 = { 'id': secondlargest[1] }
     
-    seed1 = arms.find_one(query1)['seed']
-    seed2 = arms.find_one(query2)['seed']
+    seed1 = str(arms.find_one(query1)['seed']) + '.png'
+    seed2 = str(arms.find_one(query2)['seed']) + '.png'
     
     response1 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed1))
     response2 = requests.get('https://stylegan2-pytorch-ffhq-config-f.s3.ca-central-1.amazonaws.com/data/images/'+str(seed2))
@@ -124,26 +131,29 @@ def display_faces_page(state):
     #col2.text(secondlargest[1])
         
     if col1.button('Left'):
-        arms.update_one(query1, { '$inc' : { 'alpha' : 1 } } )
+        if state.experiment == "Thompson Sampling" or state.experiment == "Mortal Thompson Sampling":
+            arms.update_one(query1, { '$inc' : { 'alpha' : 1 } } )
+            arms.update_one(query2, { '$inc' : { 'beta' : 1 } } )
+       
         arms.update_one(query1, { '$inc' : { 'n_wins' : 1 } } ) 
-        
-        arms.update_one(query2, { '$inc' : { 'beta' : 1 } } )
         arms.update_one(query2, { '$inc' : { 'n_losses' : 1 } } )
         
     if col2.button('Right'):
-        arms.update_one(query2, { '$inc' : { 'alpha' : 1 } } )
+        if state.experiment == "Thompson Sampling" or state.experiment == "Mortal Thompson Sampling":
+            arms.update_one(query2, { '$inc' : { 'alpha' : 1 } } )
+            arms.update_one(query1, { '$inc' : { 'beta' : 1 } } )
+        
         arms.update_one(query2, { '$inc' : { 'n_wins' : 1 } } )
-    
-        arms.update_one(query1, { '$inc' : { 'beta' : 1 } } )
         arms.update_one(query1, { '$inc' : { 'n_losses' : 1 } } )
      
-    image_dict1 = arms.find_one(query1)
-    image_dict2 = arms.find_one(query2)
-    
-    if image_dict1['n_losses'] > 10:
-        arms.update_one(query1, { '$set' : { 'living' : False } } )
-    if image_dict2['n_losses'] > 10:
-        arms.update_one(query2, { '$set' : { 'living' : False } } )
+    if state.experiment == "Mortal Thompson Sampling":
+        image_dict1 = arms.find_one(query1)
+        image_dict2 = arms.find_one(query2)
+        
+        if image_dict1['n_losses'] > 10:
+            arms.update_one(query1, { '$set' : { 'living' : False } } )
+        if image_dict2['n_losses'] > 10:
+            arms.update_one(query2, { '$set' : { 'living' : False } } )
     
     st.text("")
     if st.button("Finish"):
@@ -154,7 +164,13 @@ def display_faces_page(state):
 def add_user_to_database(state): 
     client = get_database_connection()
     
-    results = client.results
+    if state.experiment == "Random":
+        results = client.resultsRandom
+    elif state.experiment == "Thompson Sampling":
+        results = client.resultsTS
+    elif state.experiment == "Mortal Thompson Sampling":
+        results = client.resultsMortalTS
+
     users = results['users']
     myquery = { 'username': state.username }
     user_dict = users.find(myquery)
@@ -174,7 +190,13 @@ def add_user_to_database(state):
 def update_user_db(state):
     client = get_database_connection()
     
-    results = client.results
+    if state.experiment == "Random":
+        results = client.resultsRandom
+    elif state.experiment == "Thompson Sampling":
+        results = client.resultsTS
+    elif state.experiment == "Mortal Thompson Sampling":
+        results = client.resultsMortalTS
+        
     users = results['users']
     myquery = { 'username': state.username }
     users.update_one(myquery, { '$set' : { 'age' : state.age } } )

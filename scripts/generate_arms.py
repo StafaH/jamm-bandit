@@ -6,20 +6,22 @@ import streamlit as st
 import numpy as np
 from pymongo import MongoClient
 
+resultsList = ["resultsRandom", "resultsTS", "resultsMortalTS"]
 
 def main():
 
     client = MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")
-    results = client.results
+
+    results = client.resultsMortalTS
     arm = results['arms']
     
-    direc = '../imgs/'
+    direc = '../../../imgs/'
     i = 0
     for filename in os.listdir(direc): 
         print(filename)
         new_arm = {
             'id': i,
-            'seed': filename,
+            'seed': filename.split('.')[0],
             'alpha': 1,
             'beta': 1,
             'n_wins': 0,

@@ -12,7 +12,7 @@ def main():
 
     client = MongoClient("mongodb+srv://jammadmin:jamm2020@cluster0.qch9t.mongodb.net/jamm?retryWrites=true&w=majority")
 
-    results = client.resultsMortalTS
+    results = client.resultsRandom
     arm = results['arms']
     
     direc = '../../../imgs/'

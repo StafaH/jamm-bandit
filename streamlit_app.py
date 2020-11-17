@@ -52,7 +52,7 @@ def display_intro_page(state):
     state.politics = 'N/A'
     state.images_seen = []
     
-    state.experiment = st.selectbox('Experiment', ('Random', 'Thompson Sampling', 'Mortal Thompson Sampling'))
+    state.experiment = st.selectbox('Experiment', ('Random', 'Thompson Sampling'))#, 'Mortal Thompson Sampling'))
     
     # Add user to the database using demographic information (if they do not exist)
     if st.button('Submit'):
@@ -95,7 +95,7 @@ def display_faces_page(state):
     
     samples = []
     for arm in arms.find():
-        if arm['living'] == True: # and arm['id'] not in user_dict['images seen']:
+        if arm['living'] == True and arm['id'] not in user_dict['images seen']:
             sample = (np.random.beta(arm['alpha'], arm['beta']), arm['id'])
             samples.append(sample)
     

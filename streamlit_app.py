@@ -76,6 +76,8 @@ def display_faces_page(state):
     
     st.header('Which face is more dominant?')
     
+    st.text('Please try to attempt viewing at least 50 image pairs for each experiment trial!')
+    
     client = get_database_connection()
     if state.experiment == "Random":
         results = client.resultsRandom
@@ -156,6 +158,7 @@ def display_faces_page(state):
             arms.update_one(query2, { '$set' : { 'living' : False } } )
     
     st.text("")
+    st.text("You have seen " + str(int(len(list(user_dict['images seen']))/2)) + " pairs of faces")
     if st.button("Finish"):
         state.page = 2
     #else:

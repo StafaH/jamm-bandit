@@ -6,7 +6,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 import numpy as np
-import torch
+# import torch
 from operator import itemgetter
 import stylegan2
 from stylegan2 import utils
@@ -218,6 +218,7 @@ def get_control_latent_vectors(path):
     latent_vectors = {f.name[:-4]:np.load(f) for f in files}
     return latent_vectors
 
+'''
 @st.cache(show_spinner=False)
 def generate_image(G, weights):
     latent_size, label_size = G.latent_size, G.label_size
@@ -261,6 +262,7 @@ def generate_image(G, weights):
     
     for img in images:
         return img
+'''
 
 @st.cache(allow_output_mutation=True)
 def load_model():

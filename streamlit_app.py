@@ -8,8 +8,8 @@ from io import BytesIO
 import numpy as np
 # import torch
 from operator import itemgetter
-import stylegan2
-from stylegan2 import utils
+# import stylegan2
+# from stylegan2 import utils
 from pymongo import MongoClient
 
 import streamlit as st
@@ -264,9 +264,11 @@ def generate_image(G, weights):
         return img
 '''
 
+'''
 @st.cache(allow_output_mutation=True)
 def load_model():
     return stylegan2.models.load('Gs.pth')
+'''
     
 @st.cache(suppress_st_warning=True)
 def download_file(file_path, url):

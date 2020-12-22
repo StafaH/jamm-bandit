@@ -24,6 +24,10 @@ function skip() {
 	imgElement.src = "static/images/fi_000_dom2.bmp";
 }
 
+function record_win(el_id) {
+  console.log(`${el_id} won!`);
+}
+
 /*
 // user_choice is an arbitrary string label or int. 
 function result(user_choice) {
@@ -80,20 +84,9 @@ function handleEnd(xUp) {
   </div>
 
   <div class="row justify-content-center">
-	  <img src="{{  image  }}" id="candidate" style="500px", height="500px"> 
+    <img src="static/images/fi_001_dom0.bmp" id="candidate1" style="500px", height="500px" onClick="record_win(this.id)"> 
+    <img src="static/images/fi_001_dom0.bmp" id="candidate2" style="500px", height="500px" onClick="record_win(this.id)"> 
   </div>
 
-  <div class="row justify-content-center">
-    <button type="button" class="btn btn-danger" onclick="noChange();">No</button>
-    <button type="button" class="btn btn-success" onclick="yesChange();">Yes</button>
-  </div>
-  
-
-	
-	<div class="row justify-content-center">
-		<button type="button" class="btn btn-dark" onclick="skip();">There's something wrong with this image (skip)</button>
-	</div>
-
-	
 </body>
 </html>

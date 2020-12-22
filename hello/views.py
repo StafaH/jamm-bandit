@@ -23,5 +23,14 @@ def sample_uniform(request):
     if request.method == "GET":
         all_arms = arms.objects.all()
         random_choice = random.sample(all_arms, 2)
-        return render(request, "index.html", {"choice1": random_choice[0].imgID, "choice2": random_choice[1].imgID})
+        return {"choice1": random_choice[0].imgID, "choice2": random_choice[1].imgID}
     
+
+def sample_DTS(request):
+    raise NotImplementedError
+
+def sample(request):
+    if random.uniform(0, 1) < 0.5:
+        return render(request, "index.html", sample_uniform(request))
+    else:
+        return render(request, "index.html", sample_DTS(request))

@@ -23,10 +23,12 @@ function skip() {
     var imgElement = document.getElementById('candidate');
 	imgElement.src = "static/images/fi_000_dom2.bmp";
 }
+
 var count = (function() {
   var curr_count = 0;
   return function() {
     ++curr_count;
+    document.getElementById("click-num").textContent = curr_count;
   }
 })();
 
@@ -102,7 +104,7 @@ function handleEnd(xUp) {
   </div>
 
   <div class="row justify-content-center">
-    <h2>Faces seen: <p id="click-num"></p></h2>
+    <h2>Faces seen: <p id="click-num">0</p></h2>
   </div>
 
   <div class="row justify-content-center">

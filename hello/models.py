@@ -6,6 +6,7 @@ class arms(models.Model):
     uniformNo = models.IntegerField(0)
     TSYes = models.IntegerField(0)
     TSNo = models.IntegerField(0)
+    imgID = models.AutoField(primary_key=True)
 
 class users(models.Model):
     userID = models.IntegerField(0)

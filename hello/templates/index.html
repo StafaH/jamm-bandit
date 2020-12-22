@@ -1,58 +1,100 @@
-{% extends "base.html" %}
-{% load static %}
+<html>
+<head>
+    <title>JAMM Bandit</title>
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-{% block content %}
+</head>
 
-<div class="jumbotron text-center">
-  <div class="container">
-    <a href="/" class="lang-logo">
-      <img src="{% static 'lang-logo.png'%}">
-    </a>
-    <h1>Getting Started with Python on Heroku</h1>
-    <p>This is a sample Python application deployed to Heroku. It's a reasonably simple app - but a good foundation for understanding how to get the most out of the Heroku platform.</p>
-    <a type="button" class="btn btn-lg btn-default" href="https://devcenter.heroku.com/articles/getting-started-with-python"><span class="glyphicon glyphicon-flash"></span> Getting Started with Python</a>
-    <a type="button" class="btn btn-lg btn-primary" href="https://github.com/heroku/python-getting-started"><span class="glyphicon glyphicon-download"></span> Source on GitHub</a>
-  </div>
-</div>
-<div class="container">
-  <div class="alert alert-info text-center" role="alert">
-    To deploy your own copy, and learn the fundamentals of the Heroku platform, head over to the <a href="https://devcenter.heroku.com/articles/getting-started-with-python" class="alert-link">Getting Started with Python on Heroku</a> tutorial.
-  </div>
-  <hr>
-  <div class="row">
-    <div class="col-md-6">
-      <h3><span class="glyphicon glyphicon-info-sign"></span> How this sample app works</h3>
-      <ul>
-        <li>This app was deployed to Heroku, either using Git or by using <a href="https://github.com/heroku/python-getting-started">Heroku Button</a> on the repository.</li>
+<script>
 
-        <li>When Heroku received the source code, it fetched all the dependencies in the <a href="https://github.com/heroku/python-getting-started/blob/main/Pipfile">Pipfile</a>, creating a deployable slug.</li>
-        <li>The platform then spins up a dyno, a lightweight container that provides an isolated environment in which the slug can be mounted and executed.</li>
-        <li>You can scale your app, manage it, and deploy over <a href="https://addons.heroku.com/">150 add-on services</a>, from the Dashboard or CLI.</li>
-      </ul>
-    </div>
-    <div class="col-md-6">
-      <h3><span class="glyphicon glyphicon-link"></span> Next Steps</h3>
-      <ul>
-        <li>If you are following the <a href="https://devcenter.heroku.com/articles/getting-started-with-python">Getting Started</a> guide, then please head back to the tutorial and follow the next steps!</li>
-        <li>If you deployed this app by deploying the Heroku Button, then in a command line shell, run:</li>
-        <ul>
-          <li><code>git clone https://github.com/heroku/python-getting-started.git</code> - this will create a local copy of the source code for the app</li>
-          <li><code>cd python-getting-started</code> - change directory into the local source code repository</li>
-          <li><code>heroku git:remote -a &lt;your-app-name></code> - associate the Heroku app with the repository</li>
-          <li>You'll now be set up to run the app locally, or <a href="https://devcenter.heroku.com/articles/getting-started-with-python#push-local-changes">deploy changes</a> to Heroku</li>
-        </ul>
-      </ul>
-      <h3><span class="glyphicon glyphicon-link"></span> Helpful Links</h3>
-      <ul>
-        <li><a href="https://www.heroku.com/home">Heroku</a></li>
-        <li><a href="https://devcenter.heroku.com/">Heroku Dev Center</a></li>
-        <li><a href="https://devcenter.heroku.com/articles/getting-started-with-python">Getting Started with Python on Heroku</a></li>
-        <li><a href="https://devcenter.heroku.com/articles/django-app-configuration">Configuring Django Apps for Heroku</a></li>
-      </ul>
-    </div>
-  </div> <!-- row -->
-   <div class="alert alert-info text-center" role="alert">
-    Please do work through the Getting Started guide, even if you do know how to build such an application.  The guide covers the basics of working with Heroku, and will familiarize you with all the concepts you need in order to build and deploy your own apps.
+function noChange() {
+    var imgElement = document.getElementById('candidate');
+	imgElement.src = "../images/2.png";
+}
+
+function yesChange() {
+    var imgElement = document.getElementById('candidate');
+	imgElement.src = "../images/3.png";
+}
+
+function skip() {
+    var imgElement = document.getElementById('candidate');
+	imgElement.src = "../images/4.png";
+}
+
+/*
+// user_choice is an arbitrary string label or int. 
+function result(user_choice) {
+  console.log(user_choice);
+  image = document.getElementById("candidate");
+if!image) { 
+    console.log("No image element in page."); 
+    return; 
+  }
+  // Load a new image but report result.
+  document.location = "/?log="+image.src+":"+user_choice;
+}
+
+// Simple click
+// document.addEventListener('click', function(){result(0);}, false);        
+
+// Click and drag (non-touch-screen)
+document.addEventListener('dragstart', handleDragStart, false);
+document.addEventListener('dragend', handleDragEnd, false);
+
+// On mobile swipe action
+document.addEventListener('touchstart', handleTouchStart, false);        
+document.addEventListener('touchmove', handleTouchEnd, false);
+
+var xDown = null;                                                        
+function handleDragStart(evt) {                                         
+  xDown = evt.clientX;                                      
+};                                                
+function handleTouchStart(evt) {                                         
+  xDown = evt.touches[0].clientX;                                      
+};                                                
+function handleTouchEnd(evt) {
+  handleEnd(evt.touches[0].clientX);
+}
+function handleDragEnd(evt) {
+  handleEnd(evt.clientX);
+}
+function handleEnd(xUp) {
+  if ( !xDown ) { return; }
+  var xDiff = xDown - xUp;
+  if ( xDiff > 2 ) result(1);   
+  if ( xDiff < -2 ) result(-1);   
+  xDown = null;
+};
+*/
+
+</script>
+
+
+<body class="bg-light" dragable="true" height=100%> 
+
+
+
+  <div class="page-header row justify-content-center">
+    <h1>Is this face <b><i>warm</i></b>?</h1>
   </div>
-</div>
-{% endblock %}
+
+  <div class="row justify-content-center">
+	  <img src="{{  image  }}" id="candidate" style="500px", height="500px"> 
+  </div>
+
+  <div class="row justify-content-center">
+    <button type="button" class="btn btn-danger" onclick="noChange();">No</button>
+    <button type="button" class="btn btn-success" onclick="yesChange();">Yes</button>
+  </div>
+  
+
+	
+	<div class="row justify-content-center">
+		<button type="button" class="btn btn-dark" onclick="skip();">There's something wrong with this image (skip)</button>
+	</div>
+
+	
+</body>
+</html>

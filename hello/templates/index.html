@@ -32,9 +32,9 @@ function record_win(el_id) {
 document.addEventListener("keydown", evt => {
   var keyCode = evt.which || evt.keyCode;
   if (keyCode == 39) { //right arrow key
-    record_win("candidate1");
-  } else if (keyCode == 37) { // left arrow key
     record_win("candidate2");
+  } else if (keyCode == 37) { // left arrow key
+    record_win("candidate1");
   }
 });
 

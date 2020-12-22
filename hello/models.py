@@ -16,7 +16,7 @@ class users(models.Model):
     ('M', 'Male'),
     ('F', 'Female'),
     ('O', 'Other')]
-    gender = models.choices(max_length=1, choices=GENDERS)
+    gender = models.CharField(max_length=1, choices=GENDERS)
     
     ETHNICITIES = [
     ('WH', 'White'), 
@@ -28,7 +28,7 @@ class users(models.Model):
     ('EA', 'East Asian'), 
     ('PI', 'Pacific Islander'), 
     ('NA', 'Native American/Indigenous')]
-    ethnicity = models.choices(max_length=2, choices=ETHNICITIES)
+    ethnicity = models.CharField(max_length=2, choices=ETHNICITIES)
     
     POLITICS = [
     ('VL', 'Very Liberal'), 
@@ -38,4 +38,8 @@ class users(models.Model):
     ('VC', 'Very Conservative'), 
     ('MC', 'Moderately Conservative'), 
     ('SC', 'Slightly Conservative')]
+<<<<<<< HEAD
     politics = models.choices(max_length=2, choices=POLITICS)
+=======
+    politics = models.CharField(max_length=2, choices=POLITICS)
+>>>>>>> 592895c53a2f8aa2caeae9710b9053c4a1c1f0c6

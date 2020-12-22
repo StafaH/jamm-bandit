@@ -30,13 +30,13 @@ function record_win(el_id) {
 
 
 document.addEventListener("keydown", evt => {
-  var target = evt.which || evt.keyCode;
-  if (target.keyCode == 39) { //right arrow key
+  var keyCode = evt.which || evt.keyCode;
+  if (keyCode == 39) { //right arrow key
     record_win("candidate1");
-  } else if (target.keyCode == 37) { // left arrow key
+  } else if (keyCode == 37) { // left arrow key
     record_win("candidate2");
   }
-})
+});
 
 /*
 // user_choice is an arbitrary string label or int. 

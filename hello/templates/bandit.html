@@ -27,7 +27,7 @@ function skip() {
 var count = (function() {
   var curr_count = 0;
   return function() {
-    curr_count += 2;
+    ++curr_count;
     document.getElementById("click-num").textContent = curr_count;
   }
 })();
@@ -94,10 +94,12 @@ function handleEnd(xUp) {
 */
 
 </script>
-<body class="bg-light" dragable="true" height=100%>
+<body class="bg-light" dragable="true" height=100%> 
+
+
 
   <div class="page-header row justify-content-center">
-    <h1>Click on the face that is more <b><i>dominant</i></b>.</h1>
+    <h1>Is this face <b><i>warm</i></b>?</h1>
   </div>
 
   <div class="row justify-content-center">

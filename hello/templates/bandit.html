@@ -111,5 +111,9 @@ function handleEnd(xUp) {
     <img src="../static/images/fi_001_dom0.bmp" id="candidate2" style="500px", height="500px" onClick="record_win(this.id)"> 
   </div>
 
+  <form class="text-center" action="{% url 'user_logout' %}">
+    <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">Logout</button>
+  </form>
+
 </body>
 </html>

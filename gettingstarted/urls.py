@@ -1,6 +1,7 @@
 from django.urls import path, include
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.conf import settings
 import hello.views
 
 admin.autodiscover()
@@ -16,8 +17,9 @@ admin.autodiscover()
 
 urlpatterns = [
     path("", hello.views.index, name="index"),
-    path("login/", auth_views.LoginView.as_view(template_name="login.html"), name="login"),
+    path("login/", hello.views.user_login, name="user_login"),
+    path("logout/", hello.views.user_logout, name='user_logout'),
+    path("register/", hello.views.user_register, name="user_register"),
     path("bandit/", hello.views.bandit, name="bandit"),
-    path("db/", hello.views.db, name="db"),
     path("admin/", admin.site.urls),
 ]

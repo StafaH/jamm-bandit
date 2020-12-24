@@ -96,7 +96,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Login Redirect Information
-LOGIN_REDIRECT_URL = '/bandit/'
+LOGIN_REDIRECT_URL = "bandit/"
+LOGOUT_REDIRECT_URL = "/"
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/

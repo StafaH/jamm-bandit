@@ -1,4 +1,52 @@
-<html>
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    display: -ms-flexbox;
+    display: -webkit-box;
+    display: flex;
+    -ms-flex-align: center;
+    -ms-flex-pack: center;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    background-color: #f5f5f5;
+  }
+</style>
+
+<h2 class="mb-5 text-center">Please click on the face that is more <b><i>dominant</i></b>.</h2>
+
+
+<div class="row">
+  <div class="col-sm-6 order-sm-12">
+    <a href="{% url 'input' 1 %}">
+      <img class="w-100" src=/static/images/{{image1}}>
+    </a>
+  </div>
+  <div class="col-sm-6 order-sm-1">
+    <a href="{% url 'input' 2 %}">
+      <img class="w-100" src=/static/images/{{image2}}>
+    </a>
+  </div>
+</div>
+
+<form class="mt-5 text-center" action="{% url 'profile' %}">
+  <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">Return to Profile</button>
+</form>
+
+{% endblock %}
+
+<!-- <html>
 <head>
     <title>JAMM Bandit</title>
 <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
@@ -111,9 +159,10 @@ function handleEnd(xUp) {
     <img src="../static/images/fi_001_dom0.bmp" id="candidate2" style="500px", height="500px" onClick="record_win(this.id)"> 
   </div>
 
-  <form class="text-center" action="{% url 'user_logout' %}">
-    <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">Logout</button>
+  <form class="mt-5 text-center" action="{% url 'profile' %}">
+    <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">Return to Profile</button>
   </form>
 
 </body>
-</html>
+</html> -->
+

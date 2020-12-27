@@ -20,6 +20,9 @@ urlpatterns = [
     path("login/", hello.views.user_login, name="user_login"),
     path("logout/", hello.views.user_logout, name='user_logout'),
     path("register/", hello.views.user_register, name="user_register"),
+    path("profile/", hello.views.profile, name='profile'),
+    path(r'(?P<survey_type>\w+)/$', hello.views.info, name="info"),
     path("bandit/", hello.views.bandit, name="bandit"),
+    path('input/<int:choice>/', hello.views.input, name="input"),
     path("admin/", admin.site.urls),
 ]

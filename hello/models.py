@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 # Create your models here.
 
 
@@ -31,7 +32,7 @@ class Log(models.Model):
 
     choice = models.IntegerField(default=0)
 
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(default=timezone.now)
 
 
 # User Profile to track the user's meta-deta and demographic information

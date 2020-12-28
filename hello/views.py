@@ -173,7 +173,7 @@ def input(request, choice):
         
         profile.uniform_images_seen += 1
 
-        if profile.uniform_images_seen >= 10:
+        if profile.uniform_images_seen >= 50:
             profile.uniform_completed = True
             profile.save()
             return redirect('profile')
@@ -187,7 +187,7 @@ def input(request, choice):
             second_arm.ts_yes += 1
         profile.ts_images_seen += 1
 
-        if profile.ts_images_seen >= 10:
+        if profile.ts_images_seen >= 50:
             profile.ts_completed = True
             profile.save()
             return redirect('profile')

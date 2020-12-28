@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    html,
+    body {
+        height: 100%;
+    }
+
+    body {
+        display: -ms-flexbox;
+        display: -webkit-box;
+        display: flex;
+        -ms-flex-align: center;
+        -ms-flex-pack: center;
+        -webkit-box-align: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        justify-content: center;
+        padding-top: 40px;
+        padding-bottom: 40px;
+        background-color: #f5f5f5;
+    }
+</style>
+<h2 class="text-center">Debrief Form:</h2>
+<p class="text-left">
+    Thank you so much for participating in today’s study! We really appreciate you taking the time to contribute to our
+    scientific understanding of the way that we perceive and think about people.
+    <br> <b> About the Study</b>
+    <br> <b>Background:</b> Previous research has shown that people quickly judge others based on nonverbal information,
+    such as the face. Here, we showed you pictures of men’s face and wanted to see what about their face would influence
+    your judgments of them. For instance, some participants were asked how attractive the men looked and other
+    participants were asked how happy or sad the faces looked. We will see if these and other ratings of the faces
+    relate to each other.
+    <br> <b> More information:</b> To learn more, see : Ambady, N., Bernieri, F.J., & Richeson, J.A. (2000). Towards a
+    histology of social behavior: Judgmental accuracy from thin slices of the behavioral stream. Advances in
+    Experimental Social Psychology, 32, 201-271.
+    <br> <b> Final Report:</b>
+    <br> If you would like to receive a report of this study (or a summary of the findings) when it is completed please
+    make a Note in the mturk comments section and provide contact information.
+    <br> <b>Concerns:</b>
+    <br> If you have concerns about this study or your rights as a participant of this experiment, you are encouraged to
+    contact us at facesperception@gmail.com
+    <br> <b> Withdrawal from the Study:</b>
+    <br> You may request to have your information or any part of your responses withdrawn from the study. If you would
+    like to do so, it is important that you let us know RIGHT NOW. Because we work so hard to protect the privacy of
+    experimental participants’ data, it will be virtually impossible to know which data was yours if you decide that you
+    would like to withdraw at a later date. If you do decide to withdraw, you will still receive compensation for your
+    time and will not be penalized or punished in any way. You don’t even have to say why, and we promise not to pry.
+</p>
+<h3 class=text-center>Your MTurk code is {{mturkcode}}</h3>
+<form class="text-center" action="{% url 'user_logout' %}" method="POST">
+    {% csrf_token %}
+    <h5>If you have any questions or concerns, please write them here</h5>
+    <textarea class="mb-3 form-control" rows="2" name="comments"></textarea>
+    <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">I have read the debrief form and I am ready to finish the experiment.</button>
+</form>
+
+{% endblock %}

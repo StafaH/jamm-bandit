@@ -45,6 +45,12 @@
     {% endif %}
 </div>
 
+{% if not available %}
+  <form class="mt-5 text-center" action="{% url 'debrief' %}">
+    <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">Finish Study</button>
+  </form>
+{% endif %}
+
 <form class="mt-5 text-center" action="{% url 'user_logout' %}">
     <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">Logout</button>
 </form>

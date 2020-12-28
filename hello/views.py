@@ -60,8 +60,15 @@ def user_login(request):
 
 
 def user_logout(request):
-    logout(request)
-    return render(request, "logout.html")
+    if request.method == 'POST':
+        profile = Profile.objects.get(user=request.user)
+        profile.comments = request.POST.get('comments')
+        profile.save()
+        logout(request)
+        return render(request, "logout.html")
+    else:
+        logout(request)
+        return render(request, "logout.html")
 
 
 def profile(request):
@@ -84,11 +91,11 @@ def profile(request):
     else:
         context['completed'].append(ts_dict)
 
-    demo_dict = {'name': 'Demographics Survey', 'type': 'demo'}
-    if not profile.demo_completed:
-        context['available'].append(demo_dict)
-    else:
-        context['completed'].append(demo_dict)
+    # demo_dict = {'name': 'Demographics Survey', 'type': 'demo'}
+    # if not profile.demo_completed:
+    #     context['available'].append(demo_dict)
+    # else:
+    #     context['completed'].append(demo_dict)
 
     return render(request, "profile.html", context)
 
@@ -217,3 +224,17 @@ def input(request, choice):
         request.session['second_arm_id'] = random_choice[1].img_id
 
     return render(request, "bandit.html", context)
+
+
+def debrief(request):
+    # Generate mturk code
+    
+    rand_num = random.randint(9999, 100000)
+    code = request.user.username + str(rand_num)
+
+    profile = Profile.objects.get(user=request.user)
+    profile.code = code
+
+    context = {'mturkcode': code}
+
+    return render(request, "debrief.html", context)

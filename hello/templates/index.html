@@ -24,7 +24,7 @@
   }
 </style>
     <h2 class="text-center">Please Read Before Continuing:</h2>
-    <p class="text-center">
+    <p class="text-left">
       Please read this consent agreement carefully before you participate in this experiment. If
       anything unclear, please ask email the researcher for more information.
       <br>
@@ -73,13 +73,14 @@
       <br>
       <b>Contact</b>
       <br>
-      If you have any questions about this experiment, let us know: NEEDEMAIL@email.com
+      If you have any questions about this experiment, let us know: facesperception@gmail.com
       <br>
       <br>
       <b>Agreement</b>
       <br>
       If you understand what this experiment is about and agree to participate in this study, please
       indicate so below.</p>
+      <h3 class = text-center> If you do not consent to the study, please close the window and your data will not be recorded</h3>
     <form class="text-center" action="{% url 'user_login' %}" method="GET">
       {% csrf_token %}
       <button class="btn btn-lg btn-primary btn-group btn-group-justified" type="submit">Continue</button>

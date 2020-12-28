@@ -24,5 +24,6 @@ urlpatterns = [
     path(r'(?P<survey_type>\w+)/$', hello.views.info, name="info"),
     path("bandit/", hello.views.bandit, name="bandit"),
     path('input/<int:choice>/', hello.views.input, name="input"),
+    path('debrief/', hello.views.debrief, name="debrief"),
     path("admin/", admin.site.urls),
 ]

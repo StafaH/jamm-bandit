@@ -42,6 +42,8 @@ class Profile(models.Model):
         on_delete=models.CASCADE,
     )
 
+    comments = models.CharField(max_length=500, default="")
+
     demo_completed = models.BooleanField(default=False)
 
     uniform_completed = models.BooleanField(default=False)
@@ -50,7 +52,7 @@ class Profile(models.Model):
     ts_completed = models.BooleanField(default=False)
     ts_images_seen = models.IntegerField(default=0)
 
-    name = models.CharField(max_length=50)
+    code = models.CharField(max_length=50)
     age = models.IntegerField(default=0)
 
     GENDERS = [

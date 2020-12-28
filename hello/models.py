@@ -34,6 +34,10 @@ class Log(models.Model):
 
     timestamp = models.DateTimeField(default=timezone.now)
 
+    def __str__(self):
+        """String for representing the Model object."""
+        return f'{self.user.username}-{self.timestamp}'
+
 
 # User Profile to track the user's meta-deta and demographic information
 class Profile(models.Model):
@@ -56,13 +60,15 @@ class Profile(models.Model):
     age = models.IntegerField(default=0)
 
     GENDERS = [
+        ('N', 'None'),
         ('M', 'Male'),
         ('F', 'Female'),
         ('O', 'Other')]
 
-    gender = models.CharField(max_length=1, choices=GENDERS)
+    gender = models.CharField(max_length=1, choices=GENDERS, default='NO')
 
     ETHNICITIES = [
+        ('NO', 'None'),
         ('WH', 'White'),
         ('HI', 'Hispanic'),
         ('BL', 'Black'),
@@ -72,9 +78,10 @@ class Profile(models.Model):
         ('EA', 'East Asian'),
         ('PI', 'Pacific Islander'),
         ('NA', 'Native American/Indigenous')]
-    ethnicity = models.CharField(max_length=2, choices=ETHNICITIES)
+    ethnicity = models.CharField(max_length=2, choices=ETHNICITIES, default='NO')
 
     POLITICS = [
+        ('NO', 'None'),
         ('VL', 'Very Liberal'),
         ('ML', 'Moderately Liberal'),
         ('SL', 'Slightly Liberal'),
@@ -82,7 +89,7 @@ class Profile(models.Model):
         ('VC', 'Very Conservative'),
         ('MC', 'Moderately Conservative'),
         ('SC', 'Slightly Conservative')]
-    politics = models.CharField(max_length=2, choices=POLITICS)
+    politics = models.CharField(max_length=2, choices=POLITICS, default='NO')
 
     def __str__(self):
         """String for representing the Model object."""

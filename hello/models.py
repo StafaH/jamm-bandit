@@ -57,39 +57,39 @@ class Profile(models.Model):
     ts_images_seen = models.IntegerField(default=0)
 
     code = models.CharField(max_length=50)
-    age = models.IntegerField(default=0)
+    # age = models.IntegerField(default=0)
 
-    GENDERS = [
-        ('N', 'None'),
-        ('M', 'Male'),
-        ('F', 'Female'),
-        ('O', 'Other')]
+    # GENDERS = [
+    #     ('N', 'None'),
+    #     ('M', 'Male'),
+    #     ('F', 'Female'),
+    #     ('O', 'Other')]
 
-    gender = models.CharField(max_length=1, choices=GENDERS, default='NO')
+    # gender = models.CharField(max_length=1, choices=GENDERS)
 
-    ETHNICITIES = [
-        ('NO', 'None'),
-        ('WH', 'White'),
-        ('HI', 'Hispanic'),
-        ('BL', 'Black'),
-        ('ME', 'Middle Eastern'),
-        ('SA', 'South Asian'),
-        ('SE', 'South-East Asian'),
-        ('EA', 'East Asian'),
-        ('PI', 'Pacific Islander'),
-        ('NA', 'Native American/Indigenous')]
-    ethnicity = models.CharField(max_length=2, choices=ETHNICITIES, default='NO')
+    # ETHNICITIES = [
+    #     ('NO', 'None'),
+    #     ('WH', 'White'),
+    #     ('HI', 'Hispanic'),
+    #     ('BL', 'Black'),
+    #     ('ME', 'Middle Eastern'),
+    #     ('SA', 'South Asian'),
+    #     ('SE', 'South-East Asian'),
+    #     ('EA', 'East Asian'),
+    #     ('PI', 'Pacific Islander'),
+    #     ('NA', 'Native American/Indigenous')]
+    # ethnicity = models.CharField(max_length=2, choices=ETHNICITIES)
 
-    POLITICS = [
-        ('NO', 'None'),
-        ('VL', 'Very Liberal'),
-        ('ML', 'Moderately Liberal'),
-        ('SL', 'Slightly Liberal'),
-        ('NA', 'Neither Liberal or Conservative'),
-        ('VC', 'Very Conservative'),
-        ('MC', 'Moderately Conservative'),
-        ('SC', 'Slightly Conservative')]
-    politics = models.CharField(max_length=2, choices=POLITICS, default='NO')
+    # POLITICS = [
+    #     ('NO', 'None'),
+    #     ('VL', 'Very Liberal'),
+    #     ('ML', 'Moderately Liberal'),
+    #     ('SL', 'Slightly Liberal'),
+    #     ('NA', 'Neither Liberal or Conservative'),
+    #     ('VC', 'Very Conservative'),
+    #     ('MC', 'Moderately Conservative'),
+    #     ('SC', 'Slightly Conservative')]
+    # politics = models.CharField(max_length=2, choices=POLITICS)
 
     def __str__(self):
         """String for representing the Model object."""

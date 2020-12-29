@@ -46,18 +46,24 @@ class Log(models.Model):
 
 # Record of wins and losses between arms
 class DuelRecord(models.Model):
-    arm_count = lambda(self: self.arm_set.count())
-    
-    duel_matrix = ArrayField(
-        ArrayField(
-            models.IntegerField(),
-            size=arm_count(),
-        ),
-        size=arm_count(),
+    class Meta:
+        unique_together = (('first_arm', 'second_arm'))
+
+    arm_count = lambda self: self.arm_set.count()
+
+    first_arm = models.OneToOneField(
+        Arm,
+        on_delete=models.CASCADE
     )
+    second_arm = models.OneToOneField(
+        Arm, 
+        on_delete=models.CASCADE
+    ) 
+
+    first_arm_wins = models.IntegerField(default=0)
 
     def __str__(self):
-        return self.duel_matrix
+        return f"{self.first_arm}, {self.second_arm}"
 
 # User Profile to track the user's meta-deta and demographic information
 class Profile(models.Model):

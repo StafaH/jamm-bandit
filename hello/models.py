@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
+
 # Create your models here.
 
 
@@ -27,10 +29,14 @@ class Log(models.Model):
         on_delete=models.CASCADE,
     )
 
+    SAMPLING_CHOICES = [("ts", "Double Thompson Sampling"), ("uni", "Uniform Sampling")]
+
     first_arm = models.IntegerField(default=0)
     second_arm = models.IntegerField(default=0)
 
     choice = models.IntegerField(default=0)
+
+    sampling_type = models.CharField(choices=SAMPLING_CHOICES)
 
     timestamp = models.DateTimeField(default=timezone.now)
 
@@ -38,6 +44,20 @@ class Log(models.Model):
         """String for representing the Model object."""
         return f'{self.user.username}-{self.timestamp}'
 
+# Record of wins and losses between arms
+class DuelRecord(models.Model):
+    arm_count = lambda(self: self.arm_set.count())
+    
+    duel_matrix = ArrayField(
+        ArrayField(
+            models.IntegerField(),
+            size=arm_count(),
+        ),
+        size=arm_count(),
+    )
+
+    def __str__(self):
+        return self.duel_matrix
 
 # User Profile to track the user's meta-deta and demographic information
 class Profile(models.Model):

@@ -39,14 +39,14 @@ class Command(BaseCommand):
 
         # Initialize duel history between arms
         arms = Arm.objects.all()
-
         arm_combinations = combinations(arms, 2)
         for arm1, arm2 in arm_combinations:
-            new_duel = DuelRecord(
-                first_arm=arm1.img_id,
-                second_arm=arm2.img_id,
-            )
-            new_duel.save()
+            if DuelRecord.objects.filter(first_arm=arm1.img_id, second_arm=arm2.img_id).count() == 0:
+                new_duel = DuelRecord(
+                    first_arm=arm1.img_id,
+                    second_arm=arm2.img_id,
+                )
+                new_duel.save()
 
         self.stdout.write(self.style.SUCCESS('Successfully created duel log'))
 

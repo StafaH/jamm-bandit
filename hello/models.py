@@ -45,6 +45,11 @@ class Log(models.Model):
 
 # Record of wins and losses between arms
 class DuelRecord(models.Model):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['first_arm', 'second_arm'], name='unique_duels')
+        ]
+
     first_arm = models.IntegerField()
     second_arm = models.IntegerField() 
 

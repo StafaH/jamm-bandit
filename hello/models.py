@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 
@@ -29,14 +28,14 @@ class Log(models.Model):
         on_delete=models.CASCADE,
     )
 
-    SAMPLING_CHOICES = [("ts", "Double Thompson Sampling"), ("uni", "Uniform Sampling")]
+    SAMPLING_CHOICES = [("ts", "Double Thompson Sampling"), ("un", "Uniform Sampling")]
 
     first_arm = models.IntegerField(default=0)
     second_arm = models.IntegerField(default=0)
 
     choice = models.IntegerField(default=0)
 
-    sampling_type = models.CharField(choices=SAMPLING_CHOICES)
+    sampling_type = models.CharField(choices=SAMPLING_CHOICES, max_length=2, default="un")
 
     timestamp = models.DateTimeField(default=timezone.now)
 
@@ -46,19 +45,8 @@ class Log(models.Model):
 
 # Record of wins and losses between arms
 class DuelRecord(models.Model):
-    class Meta:
-        unique_together = (('first_arm', 'second_arm'))
-
-    arm_count = lambda self: self.arm_set.count()
-
-    first_arm = models.OneToOneField(
-        Arm,
-        on_delete=models.CASCADE
-    )
-    second_arm = models.OneToOneField(
-        Arm, 
-        on_delete=models.CASCADE
-    ) 
+    first_arm = models.IntegerField()
+    second_arm = models.IntegerField() 
 
     first_arm_wins = models.IntegerField(default=0)
 

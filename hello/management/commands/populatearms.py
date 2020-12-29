@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from hello.models import Arm
+from hello.models import Arm, DuelRecord
+from itertools import combinations
 import glob
 import os
 
@@ -14,6 +15,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Populating Database...'))
 
         filenames = glob.glob(os.path.join(settings.STATIC_ROOT, 'images/*.bmp'))
+       
         if not filenames:
             self.stdout.write(self.style.SUCCESS('No images were found'))
 
@@ -32,3 +34,22 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS('Successfully created arm for "%s"' % filename))
             else:
                 self.stdout.write(self.style.SUCCESS('Already exists: "%s"' % filename))
+        
+        self.stdout.write(self.style.SUCCESS('Creating duel log for arms...'))
+
+        # Initialize duel history between arms
+        arms = Arm.objects.all()
+
+        arm_combinations = combinations(arms, 2)
+        for arm1, arm2 in arm_combinations:
+            new_duel = DuelRecord(
+                first_arm=arm1.img_id,
+                second_arm=arm2.img_id,
+            )
+            new_duel.save()
+
+        self.stdout.write(self.style.SUCCESS('Successfully created duel log'))
+
+
+
+

@@ -8,7 +8,7 @@ def dts_pick_first_arm(num_arms):
     upper_conf_bound = np.zeros((num_arms, num_arms))
     lower_conf_bound = np.zeros((num_arms, num_arms))
     duel_history = DuelRecord.objects.all()
-    timestep = Counter.objects.get(name='ts_count')
+    timestep = Counter.objects.all()[0]
     timestep.refresh_from_db()
     arms = Arm.objects.all()
 

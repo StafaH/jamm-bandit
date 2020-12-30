@@ -1,9 +1,12 @@
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
+from django.db.models import F
+from math import sqrt, log
+import numpy as np
 import random
 
-from .models import Profile, Arm, Log
+from .models import Profile, Arm, Log, DuelRecord, Counter
 from .forms import UserCreationForm
 
 # Create your views here.
@@ -127,6 +130,7 @@ def bandit(request):
 
     survey_type = request.session.get('survey_type', 'uniform')
     all_arms = Arm.objects.all()
+    request.session['num_arms'] = all_arms.count()
 
     if survey_type == 'uniform':
         # Do uniform random sampling
@@ -141,8 +145,12 @@ def bandit(request):
     if survey_type == 'ts':
         # Do uniform random sampling
         random_choice = random.sample(list(all_arms), 2)
-        context['image1'] = random_choice[0].filename
-        context['image2'] = random_choice[1].filename
+        
+        first_action, lower_conf_bound = dts_pick_first_arm(request)
+        second_action = dts_pick_second_arm(request, first_action, lower_conf_bound)
+
+        context['image1'] = first_action
+        context['image2'] = second_action
 
         # Store the ID's of the two arms chosen
         request.session['first_arm_id'] = random_choice[0].img_id
@@ -150,6 +158,82 @@ def bandit(request):
 
     return render(request, "bandit.html", context)
 
+
+def dts_pick_first_arm(request):
+    upper_conf_bound = np.zeros((request.session['num_arms'], request.session['num_arms']))
+    lower_conf_bound = np.zeros((request.session['num_arms'], request.session['num_arms']))
+    duel_history = DuelRecord.objects.all()
+    timestep = Counter.objects.get(name='ts_count')
+    timestep.refresh_from_db()
+    arms = Arm.objects.all()
+
+    for i in range(request.session['num_arms']):
+        for j in range(request.session['num_arms']):
+            if j == i:
+                continue
+            else:
+                wins = duel_history.filter(first_arm=i, second_arm=j).first_arm_wins
+                losses = duel_history.filter(first_arm=j, second_arm=i).first_arm_wins
+
+            if wins + losses == 0:
+                history = 1
+                cb = 1
+            else:
+                history = wins / (wins + losses)
+                cb = sqrt((settings.ALPHA * log(timestep)) / (wins + losses))
+
+            upper_conf_bound[i][j] = history + cb
+            lower_conf_bound[i][j] = history - cb
+
+    copeland_ub = (1 / (request.session['num_arms'] - 1)) * np.sum(
+            upper_conf_bound, axis=1
+    )
+    candidates = np.argwhere(copeland_ub == np.amax(copeland_ub))
+
+    estimated_samples = np.zeros((request.session['num_arms'], request.session['num_arms']))
+    for i in range(request.session['num_arms']):
+        for j in range(i + 1, request.session['num_arms']):
+            alpha = duel_history.filter(first_arm=i, second_arm=j).first_arm_wins + 1
+            beta = duel_history.filter(first_arm=j, second_arm=i).first_arm_wins + 1
+            estimated_samples[i][j] = np.random.beta(alpha, beta)
+            estimated_samples[j][i] = 1 - estimated_samples[i][j]
+
+    likely_wins = np.zeros((request.session['num_arms'], request.session['num_arms']))
+    for c in candidates:
+        i = c[0]
+        for j in range(request.session['num_arms']):
+            if i == j:
+                continue
+            if estimated_samples[i][j] > 1 / 2:
+                likely_wins[i][j] = 1
+
+    action = np.random.choice(
+        np.argwhere(likely_wins == np.amax(likely_wins))[0]
+    )  # break ties randomly
+    
+    return action, lower_conf_bound
+
+
+def dts_pick_second_arm(request, first_action, lower_conf_bound):
+
+    arms = Arm.objects.all()
+
+    expected_samples = np.zeros((request.session['num_arms'], request.session['num_arms']))
+        for i in range(request.session['num_arms']):
+            if i == first_action:
+                continue
+            else:
+                expected_samples[i][first_action] = arms.filter(first_arm=first_action, second_arm=i)
+
+        uncertain_pairs = np.zeros((request.session['num_arms'], 1))
+        for i in range(request.session['num_arms']):
+            if i == first_action:
+                continue
+            if lower_conf_bound[i][first_action] <= 1 / 2:
+                uncertain_pairs[i] = expected_samples[i][first_action]
+
+        action = np.argmax(uncertain_pairs)
+        return action
 
 def input(request, choice):
     context = {}
@@ -212,6 +296,10 @@ def input(request, choice):
         # Store the ID's of the two arms chosen
         request.session['first_arm_id'] = random_choice[0].img_id
         request.session['second_arm_id'] = random_choice[1].img_id
+        counter = Counter.objects.get_or_create()
+        counter.uniform_count = F('uniform_count') + 1
+        counter.total_count = F('total_count') + 1
+        counter.save()
 
     if survey_type == 'ts':
         # Do uniform random sampling
@@ -222,6 +310,10 @@ def input(request, choice):
         # Store the ID's of the two arms chosen
         request.session['first_arm_id'] = random_choice[0].img_id
         request.session['second_arm_id'] = random_choice[1].img_id
+
+        counter.ts_count = F('ts_count') + 1
+        counter.total_count = F('total_count') + 1
+        counter.save()
 
     return render(request, "bandit.html", context)
 

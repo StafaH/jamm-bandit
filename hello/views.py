@@ -163,6 +163,7 @@ def input(request, choice):
     context = {}
 
     survey_type = request.session.get('survey_type', 'uniform')
+    sampling_code = "ts" if survey_type == "ts" else "uniform"
     all_arms = Arm.objects.all()
 
     first_arm = Arm.objects.get(img_id=request.session.get('first_arm_id'))
@@ -172,6 +173,7 @@ def input(request, choice):
         user=request.user,
         first_arm=first_arm.img_id,
         second_arm=second_arm.img_id,
+        sampling_type=sampling_code,
         choice=choice)
     new_log.save()
 

@@ -219,21 +219,21 @@ def dts_pick_second_arm(request, first_action, lower_conf_bound):
     arms = Arm.objects.all()
 
     expected_samples = np.zeros((request.session['num_arms'], request.session['num_arms']))
-        for i in range(request.session['num_arms']):
-            if i == first_action:
-                continue
-            else:
-                expected_samples[i][first_action] = arms.filter(first_arm=first_action, second_arm=i)
+    for i in range(request.session['num_arms']):
+        if i == first_action:
+            continue
+        else:
+            expected_samples[i][first_action] = arms.filter(first_arm=first_action, second_arm=i)
 
-        uncertain_pairs = np.zeros((request.session['num_arms'], 1))
-        for i in range(request.session['num_arms']):
-            if i == first_action:
-                continue
-            if lower_conf_bound[i][first_action] <= 1 / 2:
-                uncertain_pairs[i] = expected_samples[i][first_action]
+    uncertain_pairs = np.zeros((request.session['num_arms'], 1))
+    for i in range(request.session['num_arms']):
+        if i == first_action:
+            continue
+        if lower_conf_bound[i][first_action] <= 1 / 2:
+            uncertain_pairs[i] = expected_samples[i][first_action]
 
-        action = np.argmax(uncertain_pairs)
-        return action
+    action = np.argmax(uncertain_pairs)
+    return action
 
 def input(request, choice):
     context = {}

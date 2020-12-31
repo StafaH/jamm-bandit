@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from hello.models import Arm, DuelRecord
+from itertools import combinations
 import glob
 import os
 
@@ -21,7 +22,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Successfully reset arm for "%s"' % arm.img_id))
         
         self.stdout.write(self.style.SUCCESS('Clearing duel records'))
-        DuelRecord.objects.all.delete()
+        DuelRecord.objects.all().delete()
         arm_combinations = combinations(arms, 2)
         for arm1, arm2 in arm_combinations:
             if DuelRecord.objects.filter(first_arm=arm1.img_id, second_arm=arm2.img_id).count() == 0:

@@ -38,6 +38,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Creating duel log for arms...'))
 
         # Initialize duel history between arms
+        Arm.objects.all.delete()
         arms = Arm.objects.all()
         arm_combinations = combinations(arms, 2)
         for arm1, arm2 in arm_combinations:

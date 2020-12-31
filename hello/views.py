@@ -168,6 +168,7 @@ def input(request, choice):
 
     first_arm = Arm.objects.get(img_id=request.session.get('first_arm_id'))
     second_arm = Arm.objects.get(img_id=request.session.get('second_arm_id'))
+    duel_record = DuelRecord.objects.get(first_arm=request.session.get('first_arm_id'), second_arm=request.session.get('second_arm_id'))
 
     new_log = Log(
         user=request.user,
@@ -182,13 +183,14 @@ def input(request, choice):
     
     if survey_type == 'uniform':
         if choice == 1:
-            first_arm.uniform_yes += 1
-            second_arm.uniform_no += 1
+            first_arm.uniform_yes = F('uniform_yes') + 1
+            second_arm.uniform_no = F('uniform_no') + 1
+
         elif choice == 2:
-            first_arm.uniform_no += 1
-            second_arm.uniform_yes += 1
+            first_arm.uniform_no = F('uniform_no') + 1
+            second_arm.uniform_yes = F('uniform_no') + 1
         
-        profile.uniform_images_seen += 1
+        profile.uniform_images_seen  = F('uniform_images_seen') + 1
 
         if profile.uniform_images_seen >= 50:
             profile.uniform_completed = True
@@ -197,12 +199,12 @@ def input(request, choice):
     
     elif survey_type == 'ts':
         if choice == 1:
-            first_arm.ts_yes += 1
-            second_arm.ts_no += 1
+            first_arm.ts_yes = F('ts_yes') + 1
+            second_arm.ts_no = F('ts_no') + 1
         elif choice == 2:
-            first_arm.ts_no += 1
-            second_arm.ts_yes += 1
-        profile.ts_images_seen += 1
+            first_arm.ts_no = F('ts_no') + 1
+            second_arm.ts_yes = F('ts_yes') + 1
+        profile.ts_images_seen = F('ts_images_seen') + 1
 
         if profile.ts_images_seen >= 50:
             profile.ts_completed = True

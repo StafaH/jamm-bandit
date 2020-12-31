@@ -168,7 +168,10 @@ def input(request, choice):
 
     first_arm = Arm.objects.get(img_id=request.session.get('first_arm_id'))
     second_arm = Arm.objects.get(img_id=request.session.get('second_arm_id'))
-    duel_record = DuelRecord.objects.get(first_arm=request.session.get('first_arm_id'), second_arm=request.session.get('second_arm_id'))
+    try:
+        duel_record = DuelRecord.objects.get(first_arm=request.session.get('first_arm_id'), second_arm=request.session.get('second_arm_id'))
+    except:
+        duel_record = DuelRecord.objects.get(first_arm=request.session.get('second_arm_id'), second_arm=request.session.get('first_arm_id'))
 
     new_log = Log(
         user=request.user,

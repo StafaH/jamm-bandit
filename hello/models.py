@@ -54,6 +54,7 @@ class DuelRecord(models.Model):
     second_arm = models.IntegerField() 
 
     first_arm_wins = models.IntegerField(default=0)
+    second_arm_wins = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.first_arm} vs {self.second_arm}"

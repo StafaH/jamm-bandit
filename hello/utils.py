@@ -17,13 +17,13 @@ def dts_pick_first_arm(num_arms):
                 continue
             else:
                 try:
-                    duel_log = duel_history.filter(first_arm=i, second_arm=j).first()
+                    duel_log = duel_history.filter(first_arm=i, second_arm=j)[0]
                     wins = duel_log.first_arm_wins
                     losses = duel_log.second_arm_wins
 
                     reverse_order = False
                 except:
-                    duel_log = duel_history.filter(first_arm=j, second_arm=i).first()
+                    duel_log = duel_history.filter(first_arm=j, second_arm=i)[0]
                     wins = duel_log.second_arm_wins
                     losses = duel_log.first_arm_wins
                     
@@ -82,12 +82,12 @@ def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
             continue
         else:
             try:
-                duel_log = duel_history.filter(first_arm=first_action, second_arm=i).first()
+                duel_log = duel_history.filter(first_arm=first_action, second_arm=i)[0]
                 alpha = duel_log.first_arm_wins + 1
                 beta = duel_log.second_arm_wins + 1
 
             except:
-                duel_log = duel_history.filter(first_arm=i, second_arm=first_action).first()
+                duel_log = duel_history.filter(first_arm=i, second_arm=first_action)[0]
                 alpha = duel_log.second_arm_wins + 1
                 beta = duel_log.first_arm_wins + 1
             

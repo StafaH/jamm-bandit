@@ -194,6 +194,7 @@ def input(request, choice):
             second_arm.uniform_yes = F('uniform_no') + 1
         
         profile.uniform_images_seen  = F('uniform_images_seen') + 1
+        profile.refresh_from_db()
 
         if int(profile.uniform_images_seen) >= 50:
             profile.uniform_completed = True

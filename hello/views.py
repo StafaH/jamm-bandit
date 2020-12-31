@@ -211,6 +211,10 @@ def input(request, choice):
             duel_record.second_arm_wins = F('second_arm_wins') + 1
         profile.ts_images_seen = F('ts_images_seen') + 1
 
+        first_arm.refresh_from_db()
+        second_arm.refresh_from_db()
+        profile.refresh_from_db()
+
         if profile.ts_images_seen >= 50:
             profile.ts_completed = True
             profile.save()

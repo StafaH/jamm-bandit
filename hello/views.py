@@ -201,9 +201,11 @@ def input(request, choice):
         if choice == 1:
             first_arm.ts_yes = F('ts_yes') + 1
             second_arm.ts_no = F('ts_no') + 1
+            duel_record.first_arm_wins = F('first_arm_wins') + 1
         elif choice == 2:
             first_arm.ts_no = F('ts_no') + 1
             second_arm.ts_yes = F('ts_yes') + 1
+            duel_record.second_arm_wins = F('second_arm_wins') + 1
         profile.ts_images_seen = F('ts_images_seen') + 1
 
         if profile.ts_images_seen >= 50:

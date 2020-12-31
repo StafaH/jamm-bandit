@@ -195,7 +195,7 @@ def input(request, choice):
         
         profile.uniform_images_seen  = F('uniform_images_seen') + 1
 
-        if profile.uniform_images_seen >= 50:
+        if int(profile.uniform_images_seen) >= 50:
             profile.uniform_completed = True
             profile.save()
             return redirect('profile')

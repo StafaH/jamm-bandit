@@ -16,8 +16,18 @@ def dts_pick_first_arm(num_arms):
             if j == i:
                 continue
             else:
-                wins = duel_history.filter(first_arm=i, second_arm=j).values_list('first_arm_wins', flat=True)[0]
-                losses = duel_history.filter(first_arm=i, second_arm=j).values_list('second_arm_wins', flat=True)[0]
+                try:
+                    duel_log = duel_history.filter(first_arm=i, second_arm=j).first()
+                    wins = duel_log.first_arm_wins
+                    losses = duel_log.second_arm_wins
+
+                    reverse_order = False
+                except:
+                    duel_log = duel_history.filter(first_arm=j, second_arm=i).first()
+                    wins = duel_log.second_arm_wins
+                    losses = duel_log.first_arm_wins
+                    
+                    reverse_order = True
 
             if wins + losses == 0:
                 history = 1
@@ -37,8 +47,12 @@ def dts_pick_first_arm(num_arms):
     estimated_samples = np.zeros((num_arms, num_arms))
     for i in range(num_arms):
         for j in range(i + 1, num_arms):
-            alpha = duel_history.filter(first_arm=i, second_arm=j).first_arm_wins + 1
-            beta = duel_history.filter(first_arm=i, second_arm=j).second_arm_wins + 1
+            if reverse_order:
+                alpha = duel_log.second_arm_wins + 1
+                beta = duel_log.first_arm_wins + 1
+            else:
+                alpha = duel_log.first_arm_wins + 1
+                beta = duel_log.second_arm_wins + 1
             estimated_samples[i][j] = np.random.beta(alpha, beta)
             estimated_samples[j][i] = 1 - estimated_samples[i][j]
 
@@ -67,7 +81,10 @@ def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
         if i == first_action:
             continue
         else:
-            expected_samples[i][first_action] = arms.filter(first_arm=first_action, second_arm=i)
+            try:
+                expected_samples[i][first_action] = arms.filter(first_arm=first_action, second_arm=i)
+            except:
+                expected_samples[i][first_action] = arms.filter(first_arm=i, second_arm=first_action)
 
     uncertain_pairs = np.zeros((num_arms, 1))
     for i in range(num_arms):

@@ -56,7 +56,7 @@ class DuelRecord(models.Model):
     first_arm_wins = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.first_arm}, {self.second_arm}"
+        return f"{self.first_arm} vs {self.second_arm}"
 
 # Keeps track of how many pairs of comparisons have been completed overall by all participants
 class Counter(models.Model):
@@ -65,7 +65,7 @@ class Counter(models.Model):
     total_count = models.IntegerField(default=0)
 
     def __str__(self):
-        return self.total_count
+        return f"{self.total_count}"
 
 # User Profile to track the user's meta-deta and demographic information
 class Profile(models.Model):

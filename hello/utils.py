@@ -16,14 +16,14 @@ def dts_pick_first_arm(num_arms):
             if j == i:
                 continue
             else:
-                try:
-                    duel_log = duel_history.filter(first_arm=i, second_arm=j)[0]
+                duel_log = duel_history.filter(first_arm=i, second_arm=j).first()
+                if duel_log is not None:
                     wins = duel_log.first_arm_wins
                     losses = duel_log.second_arm_wins
 
                     reverse_order = False
-                except:
-                    duel_log = duel_history.filter(first_arm=j, second_arm=i)[0]
+                else:
+                    duel_log = duel_history.filter(first_arm=j, second_arm=i).first()
                     wins = duel_log.second_arm_wins
                     losses = duel_log.first_arm_wins
                     

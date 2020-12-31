@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from hello.models import Arm, DuelRecord
+from hello.models import Arm, DuelRecord, Counter
 from itertools import combinations
 import glob
 import os
@@ -50,6 +50,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('Successfully created duel log'))
 
+        self.stdout.write(self.style.SUCCESS('Starting counter'))
+        counter = Counter()
+        counter.save()
 
 
 

@@ -1,5 +1,5 @@
-from django.core.management.base import BaseCommand, CommandError, DuelRecord
-from hello.models import Arm
+from django.core.management.base import BaseCommand, CommandError
+from hello.models import Arm, DuelRecord
 import glob
 import os
 

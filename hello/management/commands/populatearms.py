@@ -51,6 +51,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Successfully created duel log'))
 
         self.stdout.write(self.style.SUCCESS('Starting counter'))
+        if Counter.objects.all().count() > 1:
+            Counter.objects.all().delete()
         counter = Counter()
         counter.save()
 

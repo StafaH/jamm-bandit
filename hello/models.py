@@ -68,6 +68,11 @@ class Counter(models.Model):
     def __str__(self):
         return f"{self.total_count}"
 
+    def save(self, *args, **kwargs):
+        if not self.pk and Counter.objects.exists():
+            raise ValidationError('Only one counter can exist at once (it keeps track of all trials conducted overall)')
+        return super(Counter, self).save(*args, **kwargs)
+
 # User Profile to track the user's meta-deta and demographic information
 class Profile(models.Model):
     user = models.ForeignKey(

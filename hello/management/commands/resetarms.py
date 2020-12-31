@@ -23,6 +23,7 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS('Clearing duel records'))
         DuelRecord.objects.all().delete()
+        arms = Arm.objects.all()
         arm_combinations = combinations(arms, 2)
         for arm1, arm2 in arm_combinations:
             if DuelRecord.objects.filter(first_arm=arm1.img_id, second_arm=arm2.img_id).count() == 0:

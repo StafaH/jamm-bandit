@@ -221,6 +221,8 @@ def input(request, choice):
     second_arm.save()
     profile.save()
 
+    counter = Counter.objects.all().first()
+
     if survey_type == 'uniform':
         # Do uniform random sampling
         random_choice = random.sample(list(all_arms), 2)
@@ -230,10 +232,8 @@ def input(request, choice):
         # Store the ID's of the two arms chosen
         request.session['first_arm_id'] = random_choice[0].img_id
         request.session['second_arm_id'] = random_choice[1].img_id
-        counter = Counter.objects.get_or_create()
         counter.uniform_count = F('uniform_count') + 1
         counter.total_count = F('total_count') + 1
-        counter.save()
 
     if survey_type == 'ts':
         # Do uniform random sampling
@@ -247,8 +247,9 @@ def input(request, choice):
 
         counter.ts_count = F('ts_count') + 1
         counter.total_count = F('total_count') + 1
-        counter.save()
 
+    counter.save()
+    
     return render(request, "bandit.html", context)
 
 

@@ -74,7 +74,7 @@ def dts_pick_first_arm(num_arms):
 
 def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
 
-    arms = Arm.objects.all()
+    duel_history = DuelRecord.objects.all()
 
     expected_samples = np.zeros((num_arms, num_arms))
     for i in range(num_arms):
@@ -82,9 +82,16 @@ def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
             continue
         else:
             try:
-                expected_samples[i][first_action] = arms.filter(first_arm=first_action, second_arm=i)
+                duel_log = duel_history.filter(first_arm=first_action, second_arm=i).first()
+                alpha = duel_log.first_arm_wins + 1
+                beta = duel_log.second_arm_wins + 1
+
             except:
-                expected_samples[i][first_action] = arms.filter(first_arm=i, second_arm=first_action)
+                duel_log = duel_history.filter(first_arm=i, second_arm=first_action).first()
+                alpha = duel_log.second_arm_wins + 1
+                beta = duel_log.first_arm_wins + 1
+            
+            expected_samples[i][first_action] = np.random.beta(alpha, beta)
 
     uncertain_pairs = np.zeros((num_arms, 1))
     for i in range(num_arms):

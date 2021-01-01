@@ -7,9 +7,8 @@ from .models import Arm, DuelRecord, Counter
 def dts_pick_first_arm(num_arms):
     upper_conf_bound = np.zeros((num_arms, num_arms))
     lower_conf_bound = np.zeros((num_arms, num_arms))
-    duel_history = DuelRecord.objects.all()
+    duel_history = DuelRecord.objects.select_related()
     timestep = Counter.objects.all()[0]
-    timestep.refresh_from_db()
 
     for i in range(num_arms):
         for j in range(num_arms):
@@ -74,7 +73,7 @@ def dts_pick_first_arm(num_arms):
 
 def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
 
-    duel_history = DuelRecord.objects.all()
+    duel_history = DuelRecord.objects.select_related()
 
     expected_samples = np.zeros((num_arms, num_arms))
     for i in range(num_arms):

@@ -143,7 +143,7 @@ def bandit(request):
         request.session['second_arm_id'] = random_choice[1].img_id
 
     if survey_type == 'ts':
-        # Do uniform random sampling        
+        # Do double thompson sampling      
         first_action, lower_conf_bound = dts_pick_first_arm(request.session['num_arms'])
         second_action = dts_pick_second_arm(request.session['num_arms'], first_action, lower_conf_bound)
 
@@ -210,7 +210,7 @@ def input(request, choice):
             duel_record.second_arm_wins = F('second_arm_wins') + 1
         profile.ts_images_seen = F('ts_images_seen') + 1
         profile.refresh_from_db()
-        
+
         if int(profile.ts_images_seen) >= 50:
             profile.ts_completed = True
             profile.save()
@@ -235,17 +235,17 @@ def input(request, choice):
         counter.total_count = F('total_count') + 1
 
     if survey_type == 'ts':
-        # Do uniform random sampling
-        random_choice = random.sample(list(all_arms), 2)
-        context['image1'] = random_choice[0].filename
-        context['image2'] = random_choice[1].filename
+        # Do double thompson sampling      
+        first_action, lower_conf_bound = dts_pick_first_arm(request.session['num_arms'])
+        second_action = dts_pick_second_arm(request.session['num_arms'], first_action, lower_conf_bound)
+
+        context['image1'] = all_arms.filter(img_id=first_action).first()
+        context['image2'] = all_arms.filter(img_id=second_action).first()
 
         # Store the ID's of the two arms chosen
-        request.session['first_arm_id'] = random_choice[0].img_id
-        request.session['second_arm_id'] = random_choice[1].img_id
+        request.session['first_arm_id'] = context['image1'].img_id
+        request.session['second_arm_id'] = context['image2'].img_id
 
-        counter.ts_count = F('ts_count') + 1
-        counter.total_count = F('total_count') + 1
 
     counter.save()
     

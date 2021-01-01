@@ -1,4 +1,5 @@
 from django.conf import settings
+from itertools import combinations
 from math import sqrt, log
 import numpy as np
 
@@ -10,33 +11,29 @@ def dts_pick_first_arm(num_arms):
     duel_history = DuelRecord.objects.select_related()
     timestep = Counter.objects.all()[0]
 
-    for i in range(num_arms):
-        for j in range(num_arms):
-            if j == i:
-                continue
-            else:
-                duel_log = duel_history.filter(first_arm=i + 1, second_arm=j + 1).first()
-                if duel_log is not None:
-                    wins = duel_log.first_arm_wins
-                    losses = duel_log.second_arm_wins
+    for i, j in combinations(range(num_arms), 2)
+        duel_log = duel_history.filter(first_arm=i + 1, second_arm=j + 1).first()
+        if duel_log is not None:
+            wins = duel_log.first_arm_wins
+            losses = duel_log.second_arm_wins
 
-                    reverse_order = False
-                else:
-                    duel_log = duel_history.filter(first_arm=j + 1, second_arm=i + 1).first()
-                    wins = duel_log.second_arm_wins
-                    losses = duel_log.first_arm_wins
-                    
-                    reverse_order = True
+            reverse_order = False
+        else:
+            duel_log = duel_history.filter(first_arm=j + 1, second_arm=i + 1).first()
+            wins = duel_log.second_arm_wins
+            losses = duel_log.first_arm_wins
+            
+            reverse_order = True
 
-            if wins + losses == 0:
-                history = 1
-                cb = 1
-            else:
-                history = wins / (wins + losses)
-                cb = sqrt((settings.ALPHA * log(timestep)) / (wins + losses))
+        if wins + losses == 0:
+            history = 1
+            cb = 1
+        else:
+            history = wins / (wins + losses)
+            cb = sqrt((settings.ALPHA * log(timestep)) / (wins + losses))
 
-            upper_conf_bound[i][j] = history + cb
-            lower_conf_bound[i][j] = history - cb
+        upper_conf_bound[i][j] = history + cb
+        lower_conf_bound[i][j] = history - cb
 
     copeland_ub = (1 / (num_arms - 1)) * np.sum(
             upper_conf_bound, axis=1

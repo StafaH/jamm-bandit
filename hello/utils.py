@@ -69,7 +69,7 @@ def dts_pick_first_arm(num_arms):
         np.argwhere(likely_wins == np.amax(likely_wins))[0]
     )  # break ties randomly
     
-    return action, lower_conf_bound
+    return action + 1, lower_conf_bound
 
 
 def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
@@ -101,4 +101,4 @@ def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
             uncertain_pairs[i] = expected_samples[i][first_action]
 
     action = np.argmax(uncertain_pairs)
-    return action
+    return action + 1

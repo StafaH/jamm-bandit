@@ -209,7 +209,8 @@ def input(request, choice):
             second_arm.ts_yes = F('ts_yes') + 1
             duel_record.second_arm_wins = F('second_arm_wins') + 1
         profile.ts_images_seen = F('ts_images_seen') + 1
-
+        profile.refresh_from_db()
+        
         if int(profile.ts_images_seen) >= 50:
             profile.ts_completed = True
             profile.save()

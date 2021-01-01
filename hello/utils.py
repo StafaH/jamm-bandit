@@ -11,7 +11,7 @@ def dts_pick_first_arm(num_arms):
     duel_history = DuelRecord.objects.select_related()
     timestep = Counter.objects.all()[0]
 
-    for i, j in combinations(range(num_arms), 2)
+    for i, j in combinations(range(num_arms), 2):
         duel_log = duel_history.filter(first_arm=i + 1, second_arm=j + 1).first()
         if duel_log is not None:
             wins = duel_log.first_arm_wins

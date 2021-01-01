@@ -143,18 +143,16 @@ def bandit(request):
         request.session['second_arm_id'] = random_choice[1].img_id
 
     if survey_type == 'ts':
-        # Do uniform random sampling
-        random_choice = random.sample(list(all_arms), 2)
-        
+        # Do uniform random sampling        
         first_action, lower_conf_bound = dts_pick_first_arm(request.session['num_arms'])
         second_action = dts_pick_second_arm(request.session['num_arms'], first_action, lower_conf_bound)
 
-        context['image1'] = first_action
-        context['image2'] = second_action
+        context['image1'] = all_arms.filter(img_id=first_action).first()
+        context['image2'] = all_arms.filter(img_id=second_action).first()
 
         # Store the ID's of the two arms chosen
-        request.session['first_arm_id'] = random_choice[0].img_id
-        request.session['second_arm_id'] = random_choice[1].img_id
+        request.session['first_arm_id'] = context['image1'].img_id
+        request.session['second_arm_id'] = context['image2'].img_id
 
     return render(request, "bandit.html", context)
 

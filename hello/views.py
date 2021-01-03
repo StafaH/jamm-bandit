@@ -166,10 +166,11 @@ def input(request, choice):
 
     first_arm = Arm.objects.get(img_id=request.session.get('first_arm_id'))
     second_arm = Arm.objects.get(img_id=request.session.get('second_arm_id'))
-    try:
-        duel_record = DuelRecord.objects.get(first_arm=request.session.get('first_arm_id'), second_arm=request.session.get('second_arm_id'))
-    except:
+    
+    duel_record = DuelRecord.objects.filter(first_arm=request.session.get('first_arm_id'), second_arm=request.session.get('second_arm_id')).first()
+    if duel_record is None:
         duel_record = DuelRecord.objects.get(first_arm=request.session.get('second_arm_id'), second_arm=request.session.get('first_arm_id'))
+
 
     new_log = Log(
         user=request.user,
@@ -246,7 +247,7 @@ def input(request, choice):
         request.session['first_arm_id'] = context['image1'].img_id
         request.session['second_arm_id'] = context['image2'].img_id
 
-        counter.uniform_count = F('uniform_count') + 1
+        counter.ts_count = F('ts_count') + 1
         counter.total_count = F('total_count') + 1
 
 

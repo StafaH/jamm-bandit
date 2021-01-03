@@ -65,11 +65,11 @@ def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
         if duel.first_arm != first_action and duel.second_arm != first_action:
             continue
         i = duel.second_arm
-        else:
-            alpha = duel.first_arm_wins + 1
-            beta = duel.second_arm_wins + 1
-            
-            expected_samples[i - 1][first_action - 1] = np.random.beta(alpha, beta)
+        
+        alpha = duel.first_arm_wins + 1
+        beta = duel.second_arm_wins + 1
+        
+        expected_samples[i - 1][first_action - 1] = np.random.beta(alpha, beta)
 
     uncertain_pairs = np.zeros((num_arms, 1))
     for i in range(num_arms):

@@ -73,7 +73,7 @@ def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
 
     uncertain_pairs = np.zeros((num_arms, 1))
     for i in range(num_arms):
-        if i == first_action:
+        if i == first_action - 1:
             continue
         if lower_conf_bound[i][first_action - 1] <= 1 / 2:
             uncertain_pairs[i] = expected_samples[i][first_action - 1]

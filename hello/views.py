@@ -193,6 +193,7 @@ def input(request, choice):
             second_arm.uniform_yes = F('uniform_no') + 1
         
         profile.uniform_images_seen  = F('uniform_images_seen') + 1
+        profile.save()
         profile.refresh_from_db()
 
         if int(profile.uniform_images_seen) >= 50:
@@ -210,6 +211,7 @@ def input(request, choice):
             second_arm.ts_yes = F('ts_yes') + 1
             duel_record.second_arm_wins = F('second_arm_wins') + 1
         profile.ts_images_seen = F('ts_images_seen') + 1
+        profile.save()
         profile.refresh_from_db()
 
         if int(profile.ts_images_seen) >= 50:
@@ -219,7 +221,6 @@ def input(request, choice):
 
     first_arm.save()
     second_arm.save()
-    profile.save()
 
     counter = Counter.objects.all().first()
 

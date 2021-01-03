@@ -1,5 +1,4 @@
 from django.conf import settings
-from itertools import combinations
 from math import sqrt, log
 import numpy as np
 
@@ -8,24 +7,17 @@ from .models import Arm, DuelRecord, Counter
 def dts_pick_first_arm(num_arms):
     upper_conf_bound = np.zeros((num_arms, num_arms))
     lower_conf_bound = np.zeros((num_arms, num_arms))
-    duel_history = DuelRecord.objects.select_related()
+    duel_history = DuelRecord.objects.all()
     timestep = Counter.objects.all()[0]
 
     estimated_samples = np.zeros((num_arms, num_arms))
-    for i, j in combinations(range(num_arms), 2):
-        duel_log = duel_history.filter(first_arm=i + 1, second_arm=j + 1).first()
-        if duel_log is not None:
-            wins = duel_log.first_arm_wins
-            losses = duel_log.second_arm_wins
 
-            reverse_order = False
-        else:
-            duel_log = duel_history.filter(first_arm=j + 1, second_arm=i + 1).first()
-            wins = duel_log.second_arm_wins
-            losses = duel_log.first_arm_wins
+    for duel in duel_history:
+        i = duel.first_arm - 1
+        j = duel.second_arm - 1
+        wins = duel.first_arm_wins
+        losses = duel.second_arm_wins
             
-            reverse_order = True
-
         if wins + losses == 0:
             history = 1
             cb = 1
@@ -66,7 +58,7 @@ def dts_pick_first_arm(num_arms):
 
 def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
 
-    duel_history = DuelRecord.objects.select_related()
+    duel_history = DuelRecord.objects.all()
 
     expected_samples = np.zeros((num_arms, num_arms))
     for i in range(num_arms):

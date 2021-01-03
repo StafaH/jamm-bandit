@@ -246,6 +246,9 @@ def input(request, choice):
         request.session['first_arm_id'] = context['image1'].img_id
         request.session['second_arm_id'] = context['image2'].img_id
 
+        counter.uniform_count = F('uniform_count') + 1
+        counter.total_count = F('total_count') + 1
+
 
     counter.save()
     

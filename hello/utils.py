@@ -65,7 +65,7 @@ def dts_pick_second_arm(num_arms, first_action, lower_conf_bound):
         if i == first_action:
             continue
         else:
-            duel_log = duel_history.filter(first_arm=first_action + 1, second_arm=i + 1).first()
+            duel_log = duel_history.filter(first_arm=first_action, second_arm=i + 1).first()
             if duel_log is not None:
                 alpha = duel_log.first_arm_wins + 1
                 beta = duel_log.second_arm_wins + 1

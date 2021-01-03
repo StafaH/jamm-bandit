@@ -46,8 +46,8 @@ def dts_pick_first_arm(num_arms):
     )
     candidates =  [c[0] for c in np.argwhere(copeland_ub == np.amax(copeland_ub))]
 
-    likely_wins = np.ma.where(estimated_samples > 1/2)
-    likely_wins[candidates] = 0 
+    likely_wins = np.ma.where(estimated_samples > 1/2).mask.astype(int)
+    likely_wins[candidates] = 0
 
     action = np.random.choice(
         np.argwhere(likely_wins == np.amax(likely_wins))[0]

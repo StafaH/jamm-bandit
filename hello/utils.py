@@ -23,7 +23,7 @@ def dts_pick_first_arm(num_arms):
             cb = 1
         else:
             history = wins / (wins + losses)
-            cb = sqrt((settings.ALPHA * log(timestep)) / (wins + losses))
+            cb = sqrt((settings.ALPHA * log(timestep.ts_count)) / (wins + losses))
 
         upper_conf_bound[i][j] = history + cb
         lower_conf_bound[i][j] = history - cb

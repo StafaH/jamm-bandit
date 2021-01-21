@@ -221,6 +221,7 @@ def input(request, choice):
 
     first_arm.save()
     second_arm.save()
+    duel_record.save()
 
     counter = Counter.objects.all().first()
 

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from hello.models import Arm, DuelRecord
+from hello.models import Arm, DuelRecord, Counter
 from itertools import combinations
 import glob
 import os

@@ -1,3 +1,4 @@
+#import debug_toolbar
 from django.urls import path, include
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
@@ -26,4 +27,5 @@ urlpatterns = [
     path('input/<int:choice>/', hello.views.input, name="input"),
     path('debrief/', hello.views.debrief, name="debrief"),
     path("admin/", admin.site.urls),
+    #path('__debug__/', include(debug_toolbar.urls))
 ]

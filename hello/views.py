@@ -2,8 +2,10 @@ from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import F
+import logging
 import numpy as np
 import random
+import sys
 
 from .models import Profile, Arm, Log, DuelRecord, Counter
 from .forms import UserCreationForm
@@ -127,6 +129,7 @@ def info(request, survey_type):
 
 def bandit(request):
     context = {}
+    logger = logging.getLogger('testlogger')
 
     survey_type = request.session.get('survey_type', 'uniform')
     all_arms = Arm.objects.all()
@@ -147,18 +150,28 @@ def bandit(request):
         first_action, lower_conf_bound = dts_pick_first_arm(request.session['num_arms'])
         second_action = dts_pick_second_arm(request.session['num_arms'], first_action, lower_conf_bound)
 
-        context['image1'] = all_arms.filter(img_id=first_action).first()
-        context['image2'] = all_arms.filter(img_id=second_action).first()
+        first_arm = all_arms.filter(img_id=first_action)[0]
+        second_arm = all_arms.filter(img_id=second_action)[0]
+
+        context['image1'] = first_arm.filename
+        context['image2'] = second_arm.filename
+
+        logger.info("first arm: ")
+        logger.info(first_arm.img_id)
+        logger.info("second arm: ")
+        logger.info(second_arm.img_id)
 
         # Store the ID's of the two arms chosen
-        request.session['first_arm_id'] = context['image1'].img_id
-        request.session['second_arm_id'] = context['image2'].img_id
+        request.session['first_arm_id'] = first_arm.img_id
+        request.session['second_arm_id'] = second_arm.img_id
 
     return render(request, "bandit.html", context)
 
 
 def input(request, choice):
     context = {}
+    logger = logging.getLogger('testlogger')
+
 
     survey_type = request.session.get('survey_type', 'uniform')
     sampling_code = "ts" if survey_type == "ts" else "un"
@@ -223,6 +236,12 @@ def input(request, choice):
     second_arm.save()
     duel_record.save()
 
+    duel_record.refresh_from_db()
+    logger.info("first arm wins:")
+    logger.info(duel_record.first_arm_wins)
+    logger.info("second arm wins: ")
+    logger.info(duel_record.second_arm_wins)
+
     counter = Counter.objects.all().first()
 
     if survey_type == 'uniform':
@@ -242,20 +261,28 @@ def input(request, choice):
         first_action, lower_conf_bound = dts_pick_first_arm(request.session['num_arms'])
         second_action = dts_pick_second_arm(request.session['num_arms'], first_action, lower_conf_bound)
 
-        context['image1'] = all_arms.filter(img_id=first_action).first().filename
-        context['image2'] = all_arms.filter(img_id=second_action).first().filename
+        first_arm = all_arms.filter(img_id=first_action)[0]
+        second_arm = all_arms.filter(img_id=second_action)[0]
+
+        context['image1'] = first_arm.filename
+        context['image2'] = second_arm.filename
 
         # Store the ID's of the two arms chosen
-        request.session['first_arm_id'] = context['image1'].img_id
-        request.session['second_arm_id'] = context['image2'].img_id
+        request.session['first_arm_id'] = first_arm.img_id
+        request.session['second_arm_id'] = second_arm.img_id
+
+        logger.info("first arm: ")
+        logger.info(first_arm.img_id)
+        logger.info("second arm: ")
+        logger.info(second_arm.img_id)
 
         counter.ts_count = F('ts_count') + 1
         counter.total_count = F('total_count') + 1
 
 
     counter.save()
-    print(counter.uniform_count)
-    print(counter.ts_count)
+    counter.refresh_from_db()
+    logger.info(counter.ts_count)
     
     return render(request, "bandit.html", context)
 

@@ -242,8 +242,8 @@ def input(request, choice):
         first_action, lower_conf_bound = dts_pick_first_arm(request.session['num_arms'])
         second_action = dts_pick_second_arm(request.session['num_arms'], first_action, lower_conf_bound)
 
-        context['image1'] = all_arms.filter(img_id=first_action).first()
-        context['image2'] = all_arms.filter(img_id=second_action).first()
+        context['image1'] = all_arms.filter(img_id=first_action).first().filename
+        context['image2'] = all_arms.filter(img_id=second_action).first().filename
 
         # Store the ID's of the two arms chosen
         request.session['first_arm_id'] = context['image1'].img_id
@@ -254,6 +254,8 @@ def input(request, choice):
 
 
     counter.save()
+    print(counter.uniform_count)
+    print(counter.ts_count)
     
     return render(request, "bandit.html", context)
 

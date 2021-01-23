@@ -17,7 +17,7 @@ class Arm(models.Model):
 
     def __str__(self):
         """String for representing the Model object."""
-        return f'{self.filename}'
+        return f'{self.pk} - {self.filename}'
 
 
 # Log table will track the individual decisions that user's as they
@@ -50,8 +50,8 @@ class DuelRecord(models.Model):
             models.UniqueConstraint(fields=['first_arm', 'second_arm'], name='unique_duels')
         ]
 
-    first_arm = models.IntegerField()
-    second_arm = models.IntegerField() 
+    first_arm = models.IntegerField(db_index=True)
+    second_arm = models.IntegerField(db_index=True) 
 
     first_arm_wins = models.IntegerField(default=0)
     second_arm_wins = models.IntegerField(default=0)

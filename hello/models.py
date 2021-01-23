@@ -15,8 +15,6 @@ class Arm(models.Model):
     ts_yes = models.IntegerField(default=0)
     ts_no = models.IntegerField(default=0)
 
-    readonly_fields=("img_id")
-
     def __str__(self):
         """String for representing the Model object."""
         return f'{self.filename}'

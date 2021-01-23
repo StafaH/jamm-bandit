@@ -34,5 +34,10 @@ class Command(BaseCommand):
                 new_duel.save()
         self.stdout.write(self.style.SUCCESS('Cleared duel records'))
 
+        counter = Counter.objects.all()[0]
+        counter.ts_count = 0
+        counter.uniform_count = 0
+        counter.total_count = 0
+
 
 
